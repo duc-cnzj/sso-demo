@@ -36,6 +36,7 @@ func I18nMiddleware(env *env.Env) gin.HandlerFunc {
 				}
 			}
 		}
+
 		c.Next()
 	}
 }

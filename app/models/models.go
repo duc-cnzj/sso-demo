@@ -70,7 +70,7 @@ func (user *User) GenerateAccessToken(env *env.Env) string {
 		exists := env.GetDB().Table(User{}.TableName()).Where("access_token = ?", str).Find(&User{})
 		if exists.Error != nil && errors.Is(gorm.ErrRecordNotFound, exists.Error){
 			user.AccessToken = AccessToken
-			env.GetDB().Save(user)
+			env.GetDB().Model(user).Update("access_token", AccessToken)
 			return str
 		}
 

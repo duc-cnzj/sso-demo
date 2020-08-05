@@ -1,9 +1,12 @@
 package authcontroller
 
 import (
+	"encoding/json"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
 	"sso/app/http/middlewares/i18n"
 	"sso/app/models"
@@ -14,7 +17,7 @@ import (
 type LoginForm struct {
 	UserName    string `form:"email" binding:"required"`
 	Password    string `form:"password" binding:"required"`
-	RedirectUrl string `form:"redirect_url" binding:"required"`
+	RedirectUrl string `form:"redirect_url"`
 }
 
 func New(env *env.Env) *authController {
@@ -53,8 +56,19 @@ func (auth *authController) Login(ctx *gin.Context) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginForm.Password)); err != nil {
+		log.Println(err)
 		ctx.JSON(401, gin.H{"code": 401, "error": "email or password error!"})
 
+		return
+	}
+
+	session := sessions.Default(ctx)
+	bytes, _ := json.Marshal(user)
+	session.Set("user", string(bytes))
+	session.Save()
+
+	if loginForm.RedirectUrl == "" {
+		ctx.AbortWithStatusJSON(400, gin.H{})
 		return
 	}
 
@@ -64,8 +78,17 @@ func (auth *authController) Login(ctx *gin.Context) {
 }
 
 func (auth *authController) Me(c *gin.Context) {
+	log.Println("auth.me")
 	u, _ := c.Get("user")
-	user := u.(*models.User)
+	//user := u.(*models.User)
 
-	c.JSON(200, gin.H{"data": user})
+	c.JSON(200, gin.H{"data": u})
+}
+
+func (auth *authController) Logout(c *gin.Context) {
+	session := sessions.Default(c)
+	session.Clear()
+	session.Save()
+
+	c.Redirect(302, "/login")
 }
