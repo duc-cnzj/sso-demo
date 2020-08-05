@@ -7,6 +7,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/jinzhu/gorm"
 	_ "github.com/go-sql-driver/mysql"
+	"time"
 
 	"log"
 	"sso/config/env"
@@ -39,8 +40,14 @@ func InitEnv() *env.Env {
 	if err != nil {
 		panic(err)
 	}
-	serverEnv := env.NewEnv(db, env.WithUniversalTranslator(uni))
+	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
+	db.DB().SetMaxIdleConns(10)
+	// SetMaxOpenCons 设置数据库的最大连接数量。
+	db.DB().SetMaxOpenConns(100)
+	// SetConnMaxLifetiment 设置连接的最大可复用时间。
+	db.DB().SetConnMaxLifetime(time.Hour)
 
+	serverEnv := env.NewEnv(db, env.WithUniversalTranslator(uni))
 
 	return serverEnv
 }

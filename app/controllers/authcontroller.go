@@ -18,7 +18,7 @@ type LoginForm struct {
 }
 
 func New(env *env.Env) *authController {
-	return &authController{env:env}
+	return &authController{env: env}
 }
 
 type authController struct {
@@ -26,11 +26,11 @@ type authController struct {
 }
 
 func (*authController) LoginForm(ctx *gin.Context) {
-	redirectUrl := ctx.DefaultQuery("redirect_url", "http://baidu.com")
+	redirectUrl := ctx.Query("redirect_url")
 	ctx.HTML(http.StatusOK, "login.tmpl", struct {
 		RedirectUrl string
 	}{
-		RedirectUrl:redirectUrl,
+		RedirectUrl: redirectUrl,
 	})
 }
 
@@ -58,5 +58,14 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Redirect(302, loginForm.RedirectUrl)
+	token := user.GenerateAccessToken(auth.env)
+
+	ctx.Redirect(200,  ,loginForm.RedirectUrl+"?access_token="+token)
+}
+
+func (auth *authController) Me(c *gin.Context) {
+	u, _ := c.Get("user")
+	user := u.(*models.User)
+
+	c.JSON(200, gin.H{"data": user})
 }
