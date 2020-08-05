@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>login</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        .container{
+            margin: 0 auto;
+            max-width: 1024px;
+        }
+        .middle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login middle">
+            <form action="/login?redirect_url={{.RedirectUrl}}" method="post">
+                <label for="email">email</label>
+                <input id="email" type="email" name="email" placeholder="enter email...">
+
+                <label for="password">password</label>
+                <input id="password" type="password" name="password" autocomplete="off">
+
+                <button>submit</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
