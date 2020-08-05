@@ -60,7 +60,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 
 	token := user.GenerateAccessToken(auth.env)
 
-	ctx.Redirect(200,  ,loginForm.RedirectUrl+"?access_token="+token)
+	ctx.Redirect(302, loginForm.RedirectUrl+"?access_token="+token)
 }
 
 func (auth *authController) Me(c *gin.Context) {
