@@ -42,9 +42,7 @@ func GuestMiddleware(env *env.Env) gin.HandlerFunc {
 				token := u.GenerateAccessToken(env)
 				redirectUrl := c.Query("redirect_url")
 				if redirectUrl == "" {
-						c.Redirect(302, "/auth/select_system")
-						return
-					//c.AbortWithStatusJSON(422, gin.H{"code": 422})
+					c.Redirect(302, "/auth/select_system")
 					return
 				}
 				c.Redirect(302, redirectUrl+"?access_token="+token)
