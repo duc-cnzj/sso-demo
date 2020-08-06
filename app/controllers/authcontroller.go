@@ -5,6 +5,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/gomodule/redigo/redis"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
@@ -72,17 +73,14 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
+	if loginForm.RedirectUrl == "" {
+		ctx.Redirect(302, "/auth/select_system")
+		return
+	}
+
 	token := user.GenerateAccessToken(auth.env)
 
 	ctx.Redirect(302, loginForm.RedirectUrl+"?access_token="+token)
-}
-
-func (auth *authController) Me(c *gin.Context) {
-	log.Println("auth.me")
-	u, _ := c.Get("user")
-	//user := u.(*models.User)
-
-	c.JSON(200, gin.H{"data": u})
 }
 
 func (auth *authController) Logout(c *gin.Context) {
@@ -91,4 +89,51 @@ func (auth *authController) Logout(c *gin.Context) {
 	session.Save()
 
 	c.Redirect(302, "/login")
+}
+
+func (auth *authController) SelectSystem(c *gin.Context) {
+	c.HTML(200, "select_system.tmpl", nil)
+}
+
+func (auth *authController) AccessToken(c *gin.Context) {
+	var jsonData struct {
+		AccessToken string `json:"access_token"`
+	}
+	err := c.BindJSON(&jsonData)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "bad request"})
+		return
+	}
+
+	conn := auth.env.RedisPool().Get()
+
+	defer conn.Close()
+
+	id, err := redis.Int(conn.Do("GET", jsonData.AccessToken))
+	log.Println(id, err)
+	if err == nil {
+		user := models.User{}.FindById(uint(id), auth.env)
+		if user != nil {
+			do, err := conn.Do("DEL", jsonData.AccessToken)
+			log.Println(do, err)
+			c.JSON(200, gin.H{"api_token": user.GenerateApiToken(auth.env, false)})
+			return
+		}
+	}
+
+	c.JSON(400, gin.H{"error": "bad request"})
+}
+
+func (auth *authController) Info(c *gin.Context) {
+	token := c.Request.Header.Get("X-Request-Token")
+	if token != "" {
+		user := models.User{}.FindByToken(token, auth.env)
+		if user != nil {
+			c.JSON(200, gin.H{"data": user})
+			return
+		}
+	}
+
+	c.JSON(401, gin.H{"code": 401})
+
 }

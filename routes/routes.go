@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"sso/app/controllers"
 	auth2 "sso/app/http/middlewares/auth"
@@ -11,11 +10,15 @@ import (
 )
 
 func Init(router *gin.Engine, env *env.Env)  {
-	store, _ := redis.NewStore(10, "tcp", "localhost:6379", "", []byte("secret"))
-
-	router.Use(sessions.Sessions("sso", store), i18n.I18nMiddleware(env))
+	router.Use(sessions.Sessions("sso", env.SessionStore()), i18n.I18nMiddleware(env))
 
 	router.LoadHTMLGlob("resources/views/*")
+	// for debug
+	//router.LoadHTMLGlob("/Users/congcong/uco/sso/resources/views/*")
+
+	router.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{"code": 404, "message": "Page not found"})
+	})
 
 	auth := authcontroller.New(env)
 
@@ -25,18 +28,12 @@ func Init(router *gin.Engine, env *env.Env)  {
 		guest.POST("/login", auth.Login)
 	}
 
-	// get /login?redirect_url=xxxxx
-	// 返回 code
-
-	// post /oauth/access_token
-	// 返回 token
-
-	//authRouter := router.Use(auth2.AuthMiddleware(env))
 	authRouter := router.Group("/auth", auth2.SessionMiddleware(env))
 	{
-		// get /auth/user 带上token
-		// 返回用户信息
-		authRouter.GET("/user", auth.Me)
+		authRouter.GET("/select_system", auth.SelectSystem)
 		authRouter.GET("/logout", auth.Logout)
 	}
+
+	router.POST("/access_token", auth.AccessToken)
+	router.POST("/user/info", auth.Info)
 }
