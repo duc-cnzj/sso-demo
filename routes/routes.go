@@ -12,6 +12,8 @@ import (
 func Init(router *gin.Engine, env *env.Env)  {
 	router.Use(sessions.Sessions("sso", env.SessionStore()), i18n.I18nMiddleware(env))
 
+	router.Static("/assets", "resources/css")
+	router.Static("/images", "resources/images")
 	router.LoadHTMLGlob("resources/views/*")
 	// for debug
 	//router.LoadHTMLGlob("/Users/congcong/uco/sso/resources/views/*")

@@ -29,11 +29,14 @@ type authController struct {
 	env *env.Env
 }
 
+type LoginFormVal struct{
+	RedirectUrl string
+	Errors []string
+}
+
 func (*authController) LoginForm(ctx *gin.Context) {
 	redirectUrl := ctx.Query("redirect_url")
-	ctx.HTML(http.StatusOK, "login.tmpl", struct {
-		RedirectUrl string
-	}{
+	ctx.HTML(http.StatusOK, "login.tmpl", LoginFormVal{
 		RedirectUrl: redirectUrl,
 	})
 }
@@ -51,15 +54,19 @@ func (auth *authController) Login(ctx *gin.Context) {
 	}
 
 	user := models.User{}.FindByEmail(loginForm.UserName, auth.env)
+	printErrorBack := func() {
+		ctx.HTML(200, "login.tmpl", LoginFormVal{
+			Errors:      []string{"username or password error."},
+		})
+	}
+
 	if user == nil {
-		ctx.JSON(404, gin.H{"code": 404, "error": "user not found"})
+		printErrorBack()
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginForm.Password)); err != nil {
-		log.Println(err)
-		ctx.JSON(401, gin.H{"code": 401, "error": "email or password error!"})
-
+		printErrorBack()
 		return
 	}
 
@@ -67,11 +74,6 @@ func (auth *authController) Login(ctx *gin.Context) {
 	bytes, _ := json.Marshal(user)
 	session.Set("user", string(bytes))
 	session.Save()
-
-	if loginForm.RedirectUrl == "" {
-		ctx.AbortWithStatusJSON(400, gin.H{})
-		return
-	}
 
 	if loginForm.RedirectUrl == "" {
 		ctx.Redirect(302, "/auth/select_system")
@@ -135,5 +137,4 @@ func (auth *authController) Info(c *gin.Context) {
 	}
 
 	c.JSON(401, gin.H{"code": 401})
-
 }

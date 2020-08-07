@@ -32,8 +32,8 @@ func Init() *env.Env {
 		RedisHost:       viper.GetString("REDIS_HOST"),
 		RedisPassword:   viper.GetString("REDIS_PASSWORD"),
 		RedisPort:       viper.GetUint("REDIS_PORT"),
-		SessionLifetime: time.Duration(viper.GetInt64("SESSION_LIFETIME")),
-		AccessTokenLifetime: time.Duration(viper.GetInt64("ACCESS_TOKEN_LIFETIME")),
+		SessionLifetime: viper.GetInt("SESSION_LIFETIME"),
+		AccessTokenLifetime: viper.GetInt("ACCESS_TOKEN_LIFETIME"),
 	}
 	fmt.Println(config)
 

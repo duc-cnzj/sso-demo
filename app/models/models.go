@@ -106,7 +106,7 @@ func (user *User) GenerateApiToken(env *env.Env, forceFill bool) string {
 	if !forceFill &&
 		user.ApiToken.Valid &&
 		user.ApiToken.String != "" &&
-		time.Now().Before(user.ApiTokenCreatedAt.Add(time.Second*env.Config().SessionLifetime)) {
+		time.Now().Before(user.ApiTokenCreatedAt.Add(time.Second*time.Duration(env.Config().SessionLifetime))) {
 		return user.ApiToken.String
 	}
 

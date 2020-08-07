@@ -5,13 +5,12 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
-	"time"
 )
 
 type Config struct {
 	AppPort uint
-	SessionLifetime time.Duration
-	AccessTokenLifetime time.Duration
+	SessionLifetime int
+	AccessTokenLifetime int
 
 	// db
 	DbConnection string
