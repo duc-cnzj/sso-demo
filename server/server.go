@@ -1,15 +1,18 @@
 package server
 
 import (
+	"encoding/gob"
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
+	_ "github.com/go-sql-driver/mysql"
 	redis2 "github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
+	"sso/app/models"
 	"sso/config/env"
 	"time"
 )
@@ -22,17 +25,17 @@ func Init() *env.Env {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
 	}
 	config := env.Config{
-		AppPort:         viper.GetUint("APP_PORT"),
-		DbConnection:    viper.GetString("DB_CONNECTION"),
-		DbHost:          viper.GetString("DB_HOST"),
-		DbPort:          viper.GetUint("DB_PORT"),
-		DbDatabase:      viper.GetString("DB_DATABASE"),
-		DbUsername:      viper.GetString("DB_USERNAME"),
-		DbPassword:      viper.GetString("DB_PASSWORD"),
-		RedisHost:       viper.GetString("REDIS_HOST"),
-		RedisPassword:   viper.GetString("REDIS_PASSWORD"),
-		RedisPort:       viper.GetUint("REDIS_PORT"),
-		SessionLifetime: viper.GetInt("SESSION_LIFETIME"),
+		AppPort:             viper.GetUint("APP_PORT"),
+		DbConnection:        viper.GetString("DB_CONNECTION"),
+		DbHost:              viper.GetString("DB_HOST"),
+		DbPort:              viper.GetUint("DB_PORT"),
+		DbDatabase:          viper.GetString("DB_DATABASE"),
+		DbUsername:          viper.GetString("DB_USERNAME"),
+		DbPassword:          viper.GetString("DB_PASSWORD"),
+		RedisHost:           viper.GetString("REDIS_HOST"),
+		RedisPassword:       viper.GetString("REDIS_PASSWORD"),
+		RedisPort:           viper.GetUint("REDIS_PORT"),
+		SessionLifetime:     viper.GetInt("SESSION_LIFETIME"),
 		AccessTokenLifetime: viper.GetInt("ACCESS_TOKEN_LIFETIME"),
 	}
 	fmt.Println(config)
@@ -78,9 +81,10 @@ func Init() *env.Env {
 	store, _ := redis.NewStoreWithPool(redisPool, []byte("secret"))
 	store.Options(sessions.Options{
 		Path:   "/",
-		MaxAge: int(config.SessionLifetime),
+		MaxAge: config.SessionLifetime,
 	})
 	serverEnv := env.NewEnv(config, db, store, redisPool, env.WithUniversalTranslator(uni))
+	gob.Register(&models.User{})
 
 	return serverEnv
 }

@@ -13,7 +13,7 @@ func init() {
 	flag.StringVar(&password, "password", "", "-password")
 }
 
-func main()  {
+func main() {
 	flag.Parse()
 	bytes, e := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if e != nil {

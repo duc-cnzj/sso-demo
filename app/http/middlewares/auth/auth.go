@@ -1,9 +1,9 @@
 package auth
 
 import (
-	"encoding/json"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"log"
 	"sso/app/models"
 	"sso/config/env"
 )
@@ -11,17 +11,20 @@ import (
 func SessionMiddleware(env *env.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
-		user := session.Get("user")
-		if user != nil {
-			var u *models.User
-			err := json.Unmarshal([]byte(user.(string)), &u)
-			if err == nil {
-				c.Set("user", u)
+		user, ok := session.Get("user").(*models.User)
+		log.Println(user, ok)
+		if ok {
+			if !CheckLogoutTokenIsChanged(user.LogoutToken, user.ID, env) {
+				c.Set("user", user)
 				c.Next()
 				return
+			} else {
+				session.Clear()
+				session.Save()
 			}
 		}
 
+		// todo 有没有更好的办法
 		Scheme := "http://"
 		if c.Request.TLS != nil {
 			Scheme = "https://"
@@ -34,11 +37,9 @@ func SessionMiddleware(env *env.Env) gin.HandlerFunc {
 func GuestMiddleware(env *env.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
-		user := session.Get("user")
-		if user != nil {
-			var u *models.User
-			err := json.Unmarshal([]byte(user.(string)), &u)
-			if err == nil {
+		u, ok := session.Get("user").(*models.User)
+		if ok {
+			if !CheckLogoutTokenIsChanged(u.LogoutToken, u.ID, env) {
 				token := u.GenerateAccessToken(env)
 				redirectUrl := c.Query("redirect_url")
 				if redirectUrl == "" {
@@ -47,9 +48,26 @@ func GuestMiddleware(env *env.Env) gin.HandlerFunc {
 				}
 				c.Redirect(302, redirectUrl+"?access_token="+token)
 				return
+			} else {
+				session.Clear()
+				session.Save()
 			}
 		}
-
 		c.Next()
 	}
+}
+
+// 如果用户做了登出操作(不管是在sso登出还是在a.com登出)，则都会改变token，导致sso登录过期
+func CheckLogoutTokenIsChanged(sessionLogoutToken string, id uint, env *env.Env) bool {
+	user := models.User{}.FindById(id, env)
+	log.Println("sessionLogoutToken", sessionLogoutToken, user.Password)
+	if user == nil {
+		return true
+	}
+
+	if user.LogoutToken != "" && user.LogoutToken != sessionLogoutToken {
+		return true
+	}
+
+	return false
 }

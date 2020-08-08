@@ -12,15 +12,20 @@ import (
 
 type User struct {
 	ID                uint           `gorm:"primary_key" json:"id"`
-	UserName          string         `gorm:"type:varchar(255);" json:"user_name"`
-	Email             string         `gorm:"type:varchar(100);unique_index" json:"email"`
+	UserName          string         `gorm:"type:varchar(255);not null" json:"user_name"`
+	Email             string         `gorm:"type:varchar(100);unique_index;not null" json:"email"`
 	ApiToken          sql.NullString `gorm:"type:varchar(255);index" json:"-"`
-	ApiTokenCreatedAt *time.Time     `json:"api_token_created_at"`
-	Password          string         `gorm:"type:varchar(255);" json:"-"`
+	ApiTokenCreatedAt *time.Time     `json:"-"`
+	LogoutToken       string         `gorm:"type:varchar(255);index;default:'';not null" json:"-"`
+	Password          string         `gorm:"type:varchar(255);not null" json:"-"`
 	LastLoginAt       *time.Time     `json:"last_login_at"`
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 	DeletedAt         *time.Time     `sql:"index" json:"deleted_at"`
+}
+
+func (User) TableName() string {
+	return "users"
 }
 
 func (User) FindByEmail(email string, env *env.Env) *User {
@@ -59,8 +64,15 @@ func (User) FindByToken(token string, env *env.Env) *User {
 	return user
 }
 
-func (User) TableName() string {
-	return "users"
+func (user *User) TokenExpired(env *env.Env) bool {
+	seconds := time.Second * time.Duration(env.Config().SessionLifetime)
+	if user.ApiToken.Valid &&
+		user.ApiToken.String != "" &&
+		time.Now().Before(user.ApiTokenCreatedAt.Add(seconds)) {
+		return false
+	}
+
+	return true
 }
 
 func (user *User) GenerateAccessToken(env *env.Env) string {
@@ -106,7 +118,7 @@ func (user *User) GenerateApiToken(env *env.Env, forceFill bool) string {
 	if !forceFill &&
 		user.ApiToken.Valid &&
 		user.ApiToken.String != "" &&
-		time.Now().Before(user.ApiTokenCreatedAt.Add(time.Second*time.Duration(env.Config().SessionLifetime))) {
+		!user.TokenExpired(env) {
 		return user.ApiToken.String
 	}
 
@@ -131,4 +143,13 @@ func (user *User) GenerateApiToken(env *env.Env, forceFill bool) string {
 
 		try++
 	}
+}
+
+func (user *User) UpdateLastLoginAt(env *env.Env) {
+	env.GetDB().Model(user).Update("last_login_at", time.Now())
+}
+
+func (user *User) GenerateLogoutToken(env *env.Env) {
+	str := helper.RandomString(64)
+	env.GetDB().Model(user).Update("logout_token", str)
 }

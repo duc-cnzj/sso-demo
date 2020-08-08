@@ -3,13 +3,13 @@ package routes
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"sso/app/controllers"
+	"sso/app/http/controllers/authcontroller"
 	auth2 "sso/app/http/middlewares/auth"
 	"sso/app/http/middlewares/i18n"
 	"sso/config/env"
 )
 
-func Init(router *gin.Engine, env *env.Env)  {
+func Init(router *gin.Engine, env *env.Env) {
 	router.Use(sessions.Sessions("sso", env.SessionStore()), i18n.I18nMiddleware(env))
 
 	router.Static("/assets", "resources/css")

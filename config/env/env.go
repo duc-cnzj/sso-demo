@@ -8,8 +8,8 @@ import (
 )
 
 type Config struct {
-	AppPort uint
-	SessionLifetime int
+	AppPort             uint
+	SessionLifetime     int
 	AccessTokenLifetime int
 
 	// db

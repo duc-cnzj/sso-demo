@@ -1,7 +1,6 @@
 package authcontroller
 
 import (
-	"encoding/json"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -29,9 +28,9 @@ type authController struct {
 	env *env.Env
 }
 
-type LoginFormVal struct{
+type LoginFormVal struct {
 	RedirectUrl string
-	Errors []string
+	Errors      []string
 }
 
 func (*authController) LoginForm(ctx *gin.Context) {
@@ -56,7 +55,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 	user := models.User{}.FindByEmail(loginForm.UserName, auth.env)
 	printErrorBack := func() {
 		ctx.HTML(200, "login.tmpl", LoginFormVal{
-			Errors:      []string{"username or password error."},
+			Errors: []string{"username or password error."},
 		})
 	}
 
@@ -71,9 +70,11 @@ func (auth *authController) Login(ctx *gin.Context) {
 	}
 
 	session := sessions.Default(ctx)
-	bytes, _ := json.Marshal(user)
-	session.Set("user", string(bytes))
-	session.Save()
+	session.Set("user", user)
+	err := session.Save()
+	log.Println(err)
+
+	user.UpdateLastLoginAt(auth.env)
 
 	if loginForm.RedirectUrl == "" {
 		ctx.Redirect(302, "/auth/select_system")
@@ -87,8 +88,15 @@ func (auth *authController) Login(ctx *gin.Context) {
 
 func (auth *authController) Logout(c *gin.Context) {
 	session := sessions.Default(c)
+	user, ok := session.Get("user").(*models.User)
 	session.Clear()
 	session.Save()
+	if ok {
+		// 让用户的api调用不能再使用
+		user.GenerateApiToken(auth.env, true)
+		// 登出sso系统
+		user.GenerateLogoutToken(auth.env)
+	}
 
 	c.Redirect(302, "/login")
 }
@@ -107,6 +115,7 @@ func (auth *authController) AccessToken(c *gin.Context) {
 		return
 	}
 
+	log.Println(jsonData.AccessToken)
 	conn := auth.env.RedisPool().Get()
 
 	defer conn.Close()
@@ -117,8 +126,8 @@ func (auth *authController) AccessToken(c *gin.Context) {
 		user := models.User{}.FindById(uint(id), auth.env)
 		if user != nil {
 			do, err := conn.Do("DEL", jsonData.AccessToken)
-			log.Println(do, err)
-			c.JSON(200, gin.H{"api_token": user.GenerateApiToken(auth.env, false)})
+			log.Println("delete access token", do, err)
+			c.JSON(200, gin.H{"api_token": user.GenerateApiToken(auth.env, false), "expire_seconds": auth.env.Config().AccessTokenLifetime})
 			return
 		}
 	}
@@ -130,7 +139,7 @@ func (auth *authController) Info(c *gin.Context) {
 	token := c.Request.Header.Get("X-Request-Token")
 	if token != "" {
 		user := models.User{}.FindByToken(token, auth.env)
-		if user != nil {
+		if user != nil && !user.TokenExpired(auth.env) {
 			c.JSON(200, gin.H{"data": user})
 			return
 		}
