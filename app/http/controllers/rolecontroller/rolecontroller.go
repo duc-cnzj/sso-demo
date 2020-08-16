@@ -61,25 +61,10 @@ func (role *RoleController) Index(ctx *gin.Context) {
 	q.
 		Offset(offset).
 		Limit(query.PageSize).
+		Order("ID", true).
 		Find(&roles)
 
 	ctx.JSON(200, gin.H{"code": 200, "data": roles})
-}
-
-func (role *RoleController) Show(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("role"))
-	if err != nil {
-		log.Panicln("RoleController Show err: ", err)
-		return
-	}
-
-	r := models.Role{}.FindById(uint(id), role.env)
-	if r == nil {
-		exception.ModelNotFound(ctx, "role")
-		return
-	}
-
-	ctx.JSON(200, gin.H{"data": r})
 }
 
 func (role *RoleController) Store(ctx *gin.Context) {
@@ -117,6 +102,22 @@ func (role *RoleController) Store(ctx *gin.Context) {
 	ctx.JSON(201, gin.H{"code": 201, "data": models.Role{}.FindByIdWithPermissions(r.ID, role.env)})
 }
 
+func (role *RoleController) Show(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("role"))
+	if err != nil {
+		log.Panicln("RoleController Show err: ", err)
+		return
+	}
+
+	r := models.Role{}.FindByIdWithPermissions(uint(id), role.env)
+	if r == nil {
+		exception.ModelNotFound(ctx, "role")
+		return
+	}
+
+	ctx.JSON(200, gin.H{"data": r})
+}
+
 func (role *RoleController) Update(ctx *gin.Context) {
 	var input RoleUpdateInput
 	id, err := strconv.Atoi(ctx.Param("role"))
@@ -136,23 +137,29 @@ func (role *RoleController) Update(ctx *gin.Context) {
 		return
 	}
 
-	hasRole := models.Role{}.FindByName(input.Name, role.env)
+	if input.Name != "" {
+		hasRole := models.Role{}.FindByName(input.Name, role.env)
 
-	if hasRole != nil && hasRole.ID != r.ID {
-		var errors = form.ValidateErrors{
-			form.ValidateError{
-				Field: "name",
-				Msg:   "name exists",
-			},
+		if hasRole != nil && hasRole.ID != r.ID {
+			var errors = form.ValidateErrors{
+				form.ValidateError{
+					Field: "name",
+					Msg:   "name exists",
+				},
+			}
+			exception.ValidateException(ctx, errors, role.env)
+			return
 		}
-		exception.ValidateException(ctx, errors, role.env)
-		return
+		log.Println(input)
+		e := role.env.GetDB().Model(r).Update("name", input.Name)
+		log.Println(e.Error)
 	}
-	log.Println(input)
-	e := role.env.GetDB().Model(r).Update("name", input.Name)
-	log.Println(e.Error)
+
+	log.Println("input.PermissionIds", input.PermissionIds)
 	if input.PermissionIds != nil {
-		role.env.GetDB().Model(r).Association("Permissions").Replace(models.Permission{}.FindByIds(input.PermissionIds, role.env))
+		ps := models.Permission{}.FindByIds(input.PermissionIds, role.env)
+		role.env.GetDB().Model(r).Association("Permissions").Clear()
+		role.env.GetDB().Model(r).Association("Permissions").Append(toInterfaceSlice(ps)...)
 	}
 
 	ctx.JSON(200, gin.H{"code": 200, "data": models.Role{}.FindByIdWithPermissions(r.ID, role.env)})
@@ -161,7 +168,7 @@ func (role *RoleController) Update(ctx *gin.Context) {
 func (role *RoleController) Destroy(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("role"))
 	if err != nil {
-		log.Panicln("RoleController Show err: ", err)
+		log.Panicln("RoleController Destroy err: ", err)
 		return
 	}
 
@@ -173,4 +180,14 @@ func (role *RoleController) Destroy(ctx *gin.Context) {
 
 	role.env.GetDB().Delete(r)
 	ctx.JSON(204, nil)
+}
+
+func toInterfaceSlice(slice interface{}) []interface{} {
+	permissions := slice.([]*models.Permission)
+	newS := make([]interface{}, len(permissions))
+	for i, v := range permissions {
+		newS[i] = v
+	}
+
+	return newS
 }

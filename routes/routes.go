@@ -4,6 +4,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"sso/app/http/controllers/authcontroller"
+	"sso/app/http/controllers/permissioncontroller"
 	"sso/app/http/controllers/rolecontroller"
 	auth2 "sso/app/http/middlewares/auth"
 	"sso/app/http/middlewares/i18n"
@@ -50,6 +51,13 @@ func Init(router *gin.Engine, env *env.Env) {
 		api.GET("/roles/:role", role.Show)
 		api.PUT("/roles/:role", role.Update)
 		api.DELETE("/roles/:role", role.Destroy)
+
+		permissions := permissioncontroller.NewPermissionController(env)
+		api.GET("/permissions", permissions.Index)
+		api.POST("/permissions", permissions.Store)
+		api.GET("/permissions/:permission", permissions.Show)
+		api.PUT("/permissions/:permission", permissions.Update)
+		api.DELETE("/permissions/:permission", permissions.Destroy)
 	}
 
 }

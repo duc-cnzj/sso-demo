@@ -15,7 +15,7 @@ type Role struct {
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"-"`
 
-	Permissions []Permission `gorm:"many2many:role_permission;"`
+	Permissions []Permission `gorm:"many2many:role_permission;" json:"permissions"`
 }
 
 func (Role) FindById(id uint, env *env.Env) *Role {
@@ -29,7 +29,7 @@ func (Role) FindById(id uint, env *env.Env) *Role {
 	return r
 }
 
-func (r Role) FindByName(name string, env *env.Env)*Role {
+func (r Role) FindByName(name string, env *env.Env) *Role {
 	role := &Role{}
 	err := env.GetDB().Where("name = ?", name).First(role)
 	if err.Error != nil {
@@ -41,10 +41,10 @@ func (r Role) FindByName(name string, env *env.Env)*Role {
 	return role
 }
 
-func (r Role) FindByIdWithPermissions(id uint, env *env.Env)*Role {
+func (r Role) FindByIdWithPermissions(id uint, env *env.Env) *Role {
 	role := &Role{}
 	err := env.GetDB().
-		Preloads("Permissions").
+		Preload("Permissions").
 		First(role, "id = ?", id)
 	if err.Error != nil {
 		log.Println("FindByIdWithPermissions", err)
