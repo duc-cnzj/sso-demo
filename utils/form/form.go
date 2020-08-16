@@ -1,9 +1,17 @@
 package form
 
 import (
+	"fmt"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 )
+
+type ValidateError struct {
+	Field string
+	Msg string
+}
+
+type ValidateErrors []ValidateError
 
 //v.Value():
 //v.ActualTag():  required
@@ -25,11 +33,23 @@ import (
 //v.Kind():  string
 //v.Param():
 //v.StructNamespace():  LoginForm.RedirectUrl
-func ErrorsToMap(errors validator.ValidationErrors, ut ut.Translator) map[string]string {
-	var m = map[string]string{}
-	for _, e := range errors {
-		m[e.Field()] = e.Translate(ut)
-	}
+func ErrorsToMap(errors interface{}, ut ut.Translator) map[string]string {
+	switch errors.(type) {
+	case validator.ValidationErrors:
+		var m = map[string]string{}
+		for _, e := range errors.(validator.ValidationErrors) {
+			m[e.Field()] = e.Translate(ut)
+		}
 
-	return m
+		return m
+	case ValidateErrors:
+		var m = map[string]string{}
+		for _, e := range errors.(ValidateErrors) {
+			m[e.Field] = e.Msg
+		}
+
+		return m
+	default:
+		panic(fmt.Sprintf("not support %T", errors))
+	}
 }

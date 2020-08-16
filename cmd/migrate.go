@@ -9,6 +9,8 @@ import (
 
 var migrateModels = []interface{}{
 	&models.User{},
+	&models.Role{},
+	&models.Permission{},
 }
 
 func main() {

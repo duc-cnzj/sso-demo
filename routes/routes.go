@@ -4,6 +4,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"sso/app/http/controllers/authcontroller"
+	"sso/app/http/controllers/rolecontroller"
 	auth2 "sso/app/http/middlewares/auth"
 	"sso/app/http/middlewares/i18n"
 	"sso/config/env"
@@ -37,5 +38,18 @@ func Init(router *gin.Engine, env *env.Env) {
 	}
 
 	router.POST("/access_token", auth.AccessToken)
-	router.POST("/user/info", auth.Info)
+
+	api := router.Group("/api")
+	//api := router.Group("/api", auth2.ApiMiddleware(env))
+	{
+		api.POST("/user/info", auth.Info)
+
+		role := rolecontroller.NewRoleController(env)
+		api.GET("/roles", role.Index)
+		api.POST("/roles", role.Store)
+		api.GET("/roles/:role", role.Show)
+		api.PUT("/roles/:role", role.Update)
+		api.DELETE("/roles/:role", role.Destroy)
+	}
+
 }

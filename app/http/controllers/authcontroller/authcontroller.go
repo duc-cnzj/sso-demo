@@ -3,15 +3,13 @@ package authcontroller
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/gomodule/redigo/redis"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
-	"sso/app/http/middlewares/i18n"
 	"sso/app/models"
 	"sso/config/env"
-	"sso/utils/form"
+	"sso/utils/exception"
 )
 
 type LoginForm struct {
@@ -44,10 +42,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 	var loginForm LoginForm
 
 	if err := ctx.ShouldBind(&loginForm); err != nil {
-		errors := err.(validator.ValidationErrors)
-		value, _ := ctx.Get(i18n.UserPreferLangKey)
-		trans, _ := auth.env.GetUniversalTranslator().GetTranslator(value.(string))
-		ctx.AbortWithStatusJSON(422, gin.H{"code": 422, "error": form.ErrorsToMap(errors, trans)})
+		exception.ValidateException(ctx, err, auth.env)
 
 		return
 	}
@@ -136,13 +131,11 @@ func (auth *authController) AccessToken(c *gin.Context) {
 }
 
 func (auth *authController) Info(c *gin.Context) {
-	token := c.Request.Header.Get("X-Request-Token")
-	if token != "" {
-		user := models.User{}.FindByToken(token, auth.env)
-		if user != nil && !user.TokenExpired(auth.env) {
-			c.JSON(200, gin.H{"data": user})
-			return
-		}
+	userCtx, _ := c.Get("user")
+	user := userCtx.(models.User)
+	if !user.TokenExpired(auth.env) {
+		c.JSON(200, gin.H{"data": user})
+		return
 	}
 
 	c.JSON(401, gin.H{"code": 401})
