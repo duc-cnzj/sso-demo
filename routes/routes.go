@@ -3,9 +3,11 @@ package routes
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	authcontroller2 "sso/app/http/controllers/api/authcontroller"
+	"sso/app/http/controllers/api/permissioncontroller"
+	"sso/app/http/controllers/api/rolecontroller"
 	"sso/app/http/controllers/authcontroller"
-	"sso/app/http/controllers/permissioncontroller"
-	"sso/app/http/controllers/rolecontroller"
+	"sso/app/http/controllers/usercontroller"
 	auth2 "sso/app/http/middlewares/auth"
 	"sso/app/http/middlewares/i18n"
 	"sso/config/env"
@@ -40,10 +42,14 @@ func Init(router *gin.Engine, env *env.Env) {
 
 	router.POST("/access_token", auth.AccessToken)
 
-	api := router.Group("/api")
-	//api := router.Group("/api", auth2.ApiMiddleware(env))
+	apiGroup := router.Group("/api")
 	{
-		api.POST("/user/info", auth.Info)
+		apiAuth := authcontroller2.New(env)
+		apiGroup.POST("/login", apiAuth.Login)
+
+		api := apiGroup.Group("/", auth2.ApiMiddleware(env))
+		api.POST("/user/info", apiAuth.Info)
+		api.POST("/logout", apiAuth.Logout)
 
 		role := rolecontroller.NewRoleController(env)
 		api.GET("/roles", role.Index)
@@ -58,6 +64,12 @@ func Init(router *gin.Engine, env *env.Env) {
 		api.GET("/permissions/:permission", permissions.Show)
 		api.PUT("/permissions/:permission", permissions.Update)
 		api.DELETE("/permissions/:permission", permissions.Destroy)
-	}
 
+		user := usercontroller.NewUserController(env)
+		api.GET("/users", user.Index)
+		api.POST("/users", user.Store)
+		api.GET("/users/:user", user.Show)
+		api.PUT("/users/:user", user.Update)
+		api.DELETE("/users/:user", user.Destroy)
+	}
 }

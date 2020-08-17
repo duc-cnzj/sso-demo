@@ -28,10 +28,10 @@ func (User) TableName() string {
 	return "users"
 }
 
-func (User) FindByEmail(email string, env *env.Env) *User {
+func (User) FindByEmail(email string, env *env.Env, wheres ...interface{}) *User {
 	user := &User{}
 
-	err := env.GetDB().Where("email = ?", email).First(user)
+	err := env.GetDB().Where("email = ?", email).First(user, wheres...)
 	if err.Error != nil {
 		log.Println("findByEmail", err)
 		return nil

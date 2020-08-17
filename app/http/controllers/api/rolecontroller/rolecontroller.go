@@ -61,7 +61,7 @@ func (role *RoleController) Index(ctx *gin.Context) {
 	q.
 		Offset(offset).
 		Limit(query.PageSize).
-		Order("ID", true).
+		Order("id DESC").
 		Find(&roles)
 
 	ctx.JSON(200, gin.H{"code": 200, "data": roles})

@@ -65,7 +65,7 @@ func (p *PermissionController) Index(c *gin.Context) {
 	q.
 		Offset(offset).
 		Limit(query.PageSize).
-		Order("ID", true).
+		Order("id DESC").
 		Find(&roles)
 
 	c.JSON(200, gin.H{"code": 200, "data": roles})
