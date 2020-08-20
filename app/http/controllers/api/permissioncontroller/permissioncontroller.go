@@ -225,7 +225,7 @@ func (p *PermissionController) GetByGroups(c *gin.Context) {
 		Find(&permissions)
 	for _, permission := range permissions {
 		if items, ok := groups[permission.Project]; ok {
-			items = append(items, Item{
+			groups[permission.Project] = append(items, Item{
 				Name: permission.Name,
 				Id:   permission.ID,
 			})

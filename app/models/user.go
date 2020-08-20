@@ -192,6 +192,11 @@ func (user *User) SyncPermissions(permissions []interface{}, env *env.Env) error
 	})
 }
 
+func (user *User) ForceLogout(env *env.Env) {
+	user.GenerateApiToken(env, true)
+	user.GenerateLogoutToken(env)
+}
+
 func toRoleInterfaceSlice(slice interface{}) []interface{} {
 	roles := slice.([]*Role)
 	newS := make([]interface{}, len(roles))

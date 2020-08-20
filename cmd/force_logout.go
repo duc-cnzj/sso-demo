@@ -19,8 +19,7 @@ func main() {
 	if userId > 0 {
 		env := server.Init()
 		user := models.User{}.FindById(uint(userId), env)
-		user.GenerateLogoutToken(env)
-		user.GenerateApiToken(env, true)
+		user.ForceLogout(env)
 		log.Println("success")
 	}
 

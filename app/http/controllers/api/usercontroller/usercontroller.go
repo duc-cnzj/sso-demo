@@ -259,3 +259,20 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 
 	ctx.JSON(200, gin.H{"data": models.User{}.FindWithRoles(id, user.env)})
 }
+
+func (user *UserController) ForceLogout(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("user"))
+	if err != nil {
+		log.Panicln("UserController Show err: ", err)
+		return
+	}
+
+	byId := models.User{}.FindById(uint(id), user.env)
+	if byId == nil {
+		exception.ModelNotFound(ctx, "user")
+		return
+	}
+
+	byId.ForceLogout(user.env)
+	ctx.JSON(200, gin.H{"data": true})
+}

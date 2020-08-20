@@ -74,6 +74,7 @@ func Init(router *gin.Engine, env *env.Env) {
 		api.DELETE("/permissions/:permission", permissions.Destroy)
 
 		user := usercontroller.NewUserController(env)
+		api.POST("/users/:user/force_logout", user.ForceLogout)
 		api.POST("/users/:user/sync_roles", user.SyncRoles)
 		api.GET("/users", user.Index)
 		api.POST("/users", user.Store)
