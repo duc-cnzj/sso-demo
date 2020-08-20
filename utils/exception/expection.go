@@ -26,6 +26,6 @@ func ValidateException(ctx *gin.Context, errors interface{}, env  *env.Env)  {
 	case form.ValidateErrors:
 		ctx.AbortWithStatusJSON(422, gin.H{"code": 422, "error": form.ErrorsToMap(errors, nil)})
 	default:
-		panic(fmt.Sprintf("not support %T", errors))
+		panic(fmt.Sprintf("not support %v", errors))
 	}
 }

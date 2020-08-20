@@ -75,3 +75,9 @@ func (e *Env) GetUniversalTranslator() *ut.UniversalTranslator {
 func (e *Env) GetDB() *gorm.DB {
 	return e.db
 }
+
+func (e *Env) DBTransaction(fn func (tx *gorm.DB) error) error {
+	return e.db.Transaction(func(tx *gorm.DB) error {
+		return fn(tx)
+	})
+}

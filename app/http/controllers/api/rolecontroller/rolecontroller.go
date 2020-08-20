@@ -2,6 +2,7 @@ package rolecontroller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"log"
 	"math"
 	"sso/app/models"
@@ -9,10 +10,12 @@ import (
 	"sso/utils/exception"
 	"sso/utils/form"
 	"strconv"
+	"strings"
 )
 
 type QueryInput struct {
 	Name string `form:"name"`
+	Sort string `form:"sort"`
 
 	Page     int `form:"page"`
 	PageSize int `form:"page_size"`
@@ -37,7 +40,11 @@ func NewRoleController(env *env.Env) *RoleController {
 }
 
 func (role *RoleController) Index(ctx *gin.Context) {
-	var query QueryInput
+	var (
+		query QueryInput
+		count int
+	)
+
 	if err := ctx.ShouldBindQuery(&query); err != nil {
 		exception.ValidateException(ctx, err, role.env)
 		return
@@ -52,7 +59,19 @@ func (role *RoleController) Index(ctx *gin.Context) {
 	if query.Page <= 0 {
 		query.Page = 1
 	}
-	q := role.env.GetDB().Model(&roles)
+
+	switch strings.ToLower(query.Sort) {
+	case "asc":
+		query.Sort = "ASC"
+	case "":
+		fallthrough
+	case "desc":
+		fallthrough
+	default:
+		query.Sort = "DESC"
+	}
+
+	q := role.env.GetDB().Model(&roles).Preload("Permissions")
 	if query.Name != "" {
 		q = q.Where("name like ?", "%"+query.Name+"%")
 	}
@@ -61,10 +80,20 @@ func (role *RoleController) Index(ctx *gin.Context) {
 	q.
 		Offset(offset).
 		Limit(query.PageSize).
-		Order("id DESC").
+		Order("id " + query.Sort).
 		Find(&roles)
 
-	ctx.JSON(200, gin.H{"code": 200, "data": roles})
+	if len(roles) < query.PageSize {
+		count = query.PageSize*(query.Page-1) + len(roles)
+	} else {
+		countQuery := role.env.GetDB().Model(&models.Role{})
+		if query.Name != "" {
+			countQuery = countQuery.Where("name like ?", "%"+query.Name+"%")
+		}
+		countQuery.Count(&count)
+	}
+
+	ctx.JSON(200, gin.H{"code": 200, "data": roles, "page": query.Page, "page_size": query.PageSize, "total": count})
 }
 
 func (role *RoleController) Store(ctx *gin.Context) {
@@ -91,12 +120,27 @@ func (role *RoleController) Store(ctx *gin.Context) {
 		Name: input.Name,
 	}
 
-	newRole := role.env.GetDB().Create(r)
-	if newRole.Error != nil {
-		log.Panicln(newRole.Error.Error())
-	}
-	if input.PermissionIds != nil {
-		role.env.GetDB().Model(newRole).Association("Permissions").Replace(models.Permission{}.FindByIds(input.PermissionIds, role.env))
+	e := role.env.DBTransaction(func(tx *gorm.DB) error {
+		if err := tx.Create(r).Error; err != nil {
+			return err
+		}
+
+		if input.PermissionIds != nil {
+			permissionByIds := models.Permission{}.FindByIds(input.PermissionIds, role.env)
+			if err := tx.Model(r).Association("Permissions").Clear().Error; err != nil {
+				return err
+			}
+
+			if err := tx.Model(r).Association("Permissions").Append(toInterfaceSlice(permissionByIds)...).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if e != nil {
+		log.Panicln(e)
 	}
 
 	ctx.JSON(201, gin.H{"code": 201, "data": models.Role{}.FindByIdWithPermissions(r.ID, role.env)})
@@ -178,8 +222,37 @@ func (role *RoleController) Destroy(ctx *gin.Context) {
 		return
 	}
 
-	role.env.GetDB().Delete(r)
+	role.env.DBTransaction(func(tx *gorm.DB) error {
+		if tx.Delete(r).Error != nil {
+			return tx.Delete(r).Error
+		}
+		if tx.Model(r).Association("Permissions").Clear().Error != nil {
+			return tx.Model(r).Association("Permissions").Clear().Error
+		}
+
+		return nil
+	})
+
 	ctx.JSON(204, nil)
+}
+
+func (role *RoleController) All(c *gin.Context) {
+	type res struct {
+		ID   uint   `json:"id"`
+		Name string `json:"name"`
+	}
+	var roles []*models.Role
+	var result []res
+
+	role.env.GetDB().Select([]string{"name", "id"}).Find(&roles)
+	for _, v := range roles {
+		result = append(result, res{
+			ID:   v.ID,
+			Name: v.Name,
+		})
+	}
+
+	c.JSON(200, gin.H{"data": result})
 }
 
 func toInterfaceSlice(slice interface{}) []interface{} {

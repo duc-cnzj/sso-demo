@@ -72,7 +72,6 @@ func CheckLogoutTokenIsChanged(sessionLogoutToken string, id uint, env *env.Env)
 	return false
 }
 
-
 func ApiMiddleware(env *env.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.Request.Header.Get("X-Request-Token")
@@ -87,7 +86,7 @@ func ApiMiddleware(env *env.Env) gin.HandlerFunc {
 
 		c.AbortWithStatusJSON(401, gin.H{
 			"code": 401,
-			"msg": "Unauthorized!",
+			"msg":  "Unauthorized!",
 		})
 	}
 }

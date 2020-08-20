@@ -22,12 +22,26 @@ type User struct {
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 	DeletedAt         *time.Time     `sql:"index" json:"deleted_at"`
+
+	Permissions []Permission `gorm:"many2many:user_permission;" json:"permissions"`
+	Roles       []Role       `gorm:"many2many:user_role;" json:"roles"`
 }
 
 func (User) TableName() string {
 	return "users"
 }
 
+func (User) FindWithRoles(id int, env *env.Env) *User {
+	user := &User{}
+
+	err := env.GetDB().Preload("Roles").Where("id = ?", id).First(user)
+	if err.Error != nil {
+		log.Println("FindWithRoles", err)
+		return nil
+	}
+
+	return user
+}
 func (User) FindByEmail(email string, env *env.Env, wheres ...interface{}) *User {
 	user := &User{}
 
@@ -152,4 +166,38 @@ func (user *User) UpdateLastLoginAt(env *env.Env) {
 func (user *User) GenerateLogoutToken(env *env.Env) {
 	str := helper.RandomString(64)
 	env.GetDB().Model(user).Update("logout_token", str)
+}
+
+func (user *User) SyncRoles(roles []*Role, env *env.Env) error {
+	return env.DBTransaction(func(tx *gorm.DB) error {
+		if tx.Model(user).Association("Roles").Clear().Error != nil {
+			return tx.Model(user).Association("Roles").Clear().Error
+		}
+
+		tx.Model(user).Association("Roles").Append(toRoleInterfaceSlice(roles)...)
+
+		return nil
+	})
+}
+
+func (user *User) SyncPermissions(permissions []interface{}, env *env.Env) error {
+	return env.DBTransaction(func(tx *gorm.DB) error {
+		if tx.Model(user).Association("Permissions").Clear().Error != nil {
+			return tx.Model(user).Association("Permissions").Clear().Error
+		}
+
+		tx.Model(user).Association("Permissions").Append(permissions...)
+
+		return nil
+	})
+}
+
+func toRoleInterfaceSlice(slice interface{}) []interface{} {
+	roles := slice.([]*Role)
+	newS := make([]interface{}, len(roles))
+	for i, v := range roles {
+		newS[i] = v
+	}
+
+	return newS
 }

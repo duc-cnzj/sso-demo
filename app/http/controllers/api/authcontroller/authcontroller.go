@@ -9,8 +9,8 @@ import (
 )
 
 type LoginForm struct {
-	UserName string `form:"email" binding:"required"`
-	Password string `form:"password" binding:"required"`
+	UserName string `form:"email" json:"email" binding:"required"`
+	Password string `form:"password" json:"password" binding:"required"`
 }
 
 func New(env *env.Env) *authController {

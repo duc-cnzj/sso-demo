@@ -2,6 +2,7 @@ package usercontroller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"math"
@@ -10,6 +11,7 @@ import (
 	"sso/utils/exception"
 	"sso/utils/form"
 	"strconv"
+	"strings"
 )
 
 type StoreInput struct {
@@ -28,8 +30,13 @@ type QueryInput struct {
 	UserName string `form:"user_name"`
 	Email    string `form:"email"`
 
-	Page     int `form:"page"`
-	PageSize int `form:"page_size"`
+	Page     int    `form:"page"`
+	PageSize int    `form:"page_size"`
+	Sort     string `form:"sort"`
+}
+
+type SyncInput struct {
+	RoleIds []uint `form:"role_ids" json:"role_ids"`
 }
 
 type UserController struct {
@@ -41,7 +48,10 @@ func NewUserController(env *env.Env) *UserController {
 }
 
 func (user *UserController) Index(ctx *gin.Context) {
-	var query QueryInput
+	var (
+		query QueryInput
+		count int
+	)
 	if err := ctx.ShouldBindQuery(&query); err != nil {
 		exception.ValidateException(ctx, err, user.env)
 		return
@@ -54,6 +64,18 @@ func (user *UserController) Index(ctx *gin.Context) {
 	if query.Page <= 0 {
 		query.Page = 1
 	}
+
+	switch strings.ToLower(query.Sort) {
+	case "asc":
+		query.Sort = "ASC"
+	case "":
+		fallthrough
+	case "desc":
+		fallthrough
+	default:
+		query.Sort = "DESC"
+	}
+
 	q := user.env.GetDB().Model(&users)
 	if query.UserName != "" {
 		q = q.Where("user_name like ?", "%"+query.UserName+"%")
@@ -63,12 +85,24 @@ func (user *UserController) Index(ctx *gin.Context) {
 	}
 	offset := int(math.Max(float64((query.Page-1)*query.PageSize), 0))
 	q.
+		Preload("Roles.Permissions").
 		Offset(offset).
 		Limit(query.PageSize).
-		Order("id DESC").
+		Order("id " + query.Sort).
 		Find(&users)
-
-	ctx.JSON(200, gin.H{"code": 200, "data": users})
+	if len(users) < query.PageSize {
+		count = query.PageSize*(query.Page-1) + len(users)
+	} else {
+		countQuery := user.env.GetDB().Model(&models.Role{})
+		if query.UserName != "" {
+			countQuery = countQuery.Where("user_name like ?", "%"+query.UserName+"%")
+		}
+		if query.Email != "" {
+			countQuery = countQuery.Where("email like ?", "%"+query.Email+"%")
+		}
+		countQuery.Count(&count)
+	}
+	ctx.JSON(200, gin.H{"code": 200, "data": users, "page": query.Page, "page_size": query.PageSize, "total": count})
 }
 
 func (user *UserController) Store(ctx *gin.Context) {
@@ -184,7 +218,44 @@ func (user *UserController) Destroy(ctx *gin.Context) {
 		exception.ModelNotFound(ctx, "user")
 		return
 	}
+	if err := user.env.DBTransaction(func(tx *gorm.DB) error {
+		tx.Model(user).Association("Roles").Clear()
+		tx.Model(user).Association("Permissions").Clear()
+		tx.Delete(byId)
 
-	user.env.GetDB().Delete(byId)
+		return nil
+	}); err != nil {
+		log.Panicln("UserController Destroy err", err)
+	}
+
 	ctx.JSON(204, nil)
+}
+
+func (user *UserController) SyncRoles(ctx *gin.Context) {
+	var input SyncInput
+	id, err := strconv.Atoi(ctx.Param("user"))
+	if err != nil {
+		log.Panicln("UserController Show err: ", err)
+		return
+	}
+	log.Println("SyncInput: ", input.RoleIds)
+
+	if err := ctx.ShouldBind(&input); err != nil {
+		exception.ValidateException(ctx, err, user.env)
+		log.Println("UserController SyncRoles err: ", err)
+		return
+	}
+	byId := models.User{}.FindById(uint(id), user.env)
+	if byId == nil {
+		exception.ModelNotFound(ctx, "user")
+		return
+	}
+
+	userByIds := models.Role{}.FindByIds(input.RoleIds, user.env)
+
+	if err := byId.SyncRoles(userByIds, user.env); err != nil {
+		log.Panicln(err)
+	}
+
+	ctx.JSON(200, gin.H{"data": models.User{}.FindWithRoles(id, user.env)})
 }

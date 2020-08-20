@@ -2,6 +2,7 @@ package permissioncontroller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"log"
 	"math"
 	"sso/app/models"
@@ -9,6 +10,7 @@ import (
 	"sso/utils/exception"
 	"sso/utils/form"
 	"strconv"
+	"strings"
 )
 
 type PermissionController struct {
@@ -28,6 +30,7 @@ type UpdateInput struct {
 type QueryInput struct {
 	Name    string `form:"name"`
 	Project string `form:"project"`
+	Sort    string `form:"sort"`
 
 	Page     int `form:"page"`
 	PageSize int `form:"page_size"`
@@ -38,14 +41,17 @@ func NewPermissionController(env *env.Env) *PermissionController {
 }
 
 func (p *PermissionController) Index(c *gin.Context) {
-	var query QueryInput
+	var (
+		query QueryInput
+		count int
+	)
 	if err := c.ShouldBindQuery(&query); err != nil {
 		exception.ValidateException(c, err, p.env)
 		return
 	}
 	log.Println(query)
 
-	var roles []models.Permission
+	var permissions []models.Permission
 	if query.PageSize <= 0 {
 		query.PageSize = 15
 	}
@@ -53,7 +59,19 @@ func (p *PermissionController) Index(c *gin.Context) {
 	if query.Page <= 0 {
 		query.Page = 1
 	}
-	q := p.env.GetDB().Model(&roles)
+
+	switch strings.ToLower(query.Sort) {
+	case "asc":
+		query.Sort = "ASC"
+	case "":
+		fallthrough
+	case "desc":
+		fallthrough
+	default:
+		query.Sort = "DESC"
+	}
+
+	q := p.env.GetDB().Model(&permissions)
 	if query.Name != "" {
 		q = q.Where("name like ?", "%"+query.Name+"%")
 	}
@@ -65,15 +83,27 @@ func (p *PermissionController) Index(c *gin.Context) {
 	q.
 		Offset(offset).
 		Limit(query.PageSize).
-		Order("id DESC").
-		Find(&roles)
+		Order("id " + query.Sort).
+		Find(&permissions)
+	if len(permissions) < query.PageSize {
+		count = query.PageSize*(query.Page-1) + len(permissions)
+	} else {
+		countQuery := p.env.GetDB().Model(&models.Permission{})
+		if query.Name != "" {
+			countQuery = countQuery.Where("name like ?", "%"+query.Name+"%")
+		}
+		if query.Project != "" {
+			countQuery = countQuery.Where("project like ?", "%"+query.Project+"%")
+		}
+		countQuery.Count(&count)
+	}
 
-	c.JSON(200, gin.H{"code": 200, "data": roles})
+	c.JSON(200, gin.H{"code": 200, "data": permissions, "page": query.Page, "page_size": query.PageSize, "total": count})
 }
 
 func (p *PermissionController) Store(c *gin.Context) {
 	var input StoreInput
-	if err := c.ShouldBind(input); err != nil {
+	if err := c.ShouldBind(&input); err != nil {
 		exception.ValidateException(c, err, p.env)
 		log.Println("PermissionController Store err: ", err)
 		return
@@ -91,12 +121,12 @@ func (p *PermissionController) Store(c *gin.Context) {
 		return
 	}
 
-	pnew := models.Permission{
+	pnew := &models.Permission{
 		Name:    input.Name,
 		Project: input.Project,
 	}
-	if newP := p.env.GetDB().Create(pnew); newP.Error != nil {
-		log.Panicln(newP.Error.Error())
+	if err := p.env.GetDB().Create(pnew).Error; err != nil {
+		log.Panicln(err.Error())
 	}
 
 	c.JSON(201, gin.H{"code": 201, "data": pnew})
@@ -167,6 +197,61 @@ func (p *PermissionController) Destroy(c *gin.Context) {
 		return
 	}
 
-	p.env.GetDB().Delete(r)
+	p.env.DBTransaction(func(tx *gorm.DB) error {
+		if tx.Delete(r).Error != nil {
+			return tx.Delete(r).Error
+		}
+		if err := tx.Model(r).Association("Roles").Clear().Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	c.JSON(204, nil)
+}
+
+func (p *PermissionController) GetByGroups(c *gin.Context) {
+	var permissions []models.Permission
+
+	type Item struct {
+		Name string `json:"name"`
+		Id   uint   `json:"id"`
+	}
+	var groups = make(map[string][]Item)
+
+	p.env.GetDB().
+		Order("id DESC").
+		Find(&permissions)
+	for _, permission := range permissions {
+		if items, ok := groups[permission.Project]; ok {
+			items = append(items, Item{
+				Name: permission.Name,
+				Id:   permission.ID,
+			})
+		} else {
+			groups[permission.Project] = []Item{
+				{
+					Name: permission.Name,
+					Id:   permission.ID,
+				}}
+		}
+
+	}
+
+	c.JSON(200, gin.H{"data": groups})
+}
+
+func (p *PermissionController) GetPermissionProjects(c *gin.Context) {
+	var res []models.Permission
+	if err := p.env.GetDB().Model(&models.Permission{}).Select([]string{"distinct project"}).Find(&res).Error; err != nil {
+		log.Panicln(err)
+	}
+
+	var items []string
+	for _, value := range res {
+		items = append(items, value.Project)
+	}
+
+	c.JSON(200, gin.H{"data": items})
 }

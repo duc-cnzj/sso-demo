@@ -16,6 +16,17 @@ type Role struct {
 	DeletedAt *time.Time `sql:"index" json:"-"`
 
 	Permissions []Permission `gorm:"many2many:role_permission;" json:"permissions"`
+	Users       []User       `gorm:"many2many:user_role;" json:"users"`
+}
+
+func (Role) FindByIds(ids []uint, env *env.Env) []*Role {
+	var roles []*Role
+	if err := env.GetDB().Where("id in (?)", ids).Find(&roles).Error; err != nil {
+		log.Println("findById", err)
+		return nil
+	}
+
+	return roles
 }
 
 func (Role) FindById(id uint, env *env.Env) *Role {

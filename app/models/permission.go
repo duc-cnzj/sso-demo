@@ -17,6 +17,7 @@ type Permission struct {
 	DeletedAt *time.Time `sql:"index" json:"-"`
 
 	Roles []Role `gorm:"many2many:role_permission;" json:"roles"`
+	Users []User `gorm:"many2many:user_permission;" json:"users"`
 }
 
 func (r Permission) FindByIds(ids []uint, env *env.Env) []*Permission {

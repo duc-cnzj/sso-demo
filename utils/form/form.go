@@ -8,7 +8,7 @@ import (
 
 type ValidateError struct {
 	Field string
-	Msg string
+	Msg   string
 }
 
 type ValidateErrors []ValidateError
