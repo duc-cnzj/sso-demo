@@ -12,14 +12,23 @@ import (
 	redis2 "github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
+	"path"
 	"sso/app/models"
 	"sso/config/env"
 	"time"
 )
 
-func Init() *env.Env {
-	viper.AddConfigPath(".")
-	viper.SetConfigFile(".env") // REQUIRED if the config file does not have the extension in the name
+func Init(configPath string, rootPath string) *env.Env {
+	if configPath == "" {
+		configPath = ".env"
+	}
+	if !path.IsAbs(configPath) {
+		viper.AddConfigPath(".")
+	}
+	viper.SetConfigFile(configPath)
+	//viper.AddConfigPath(".")
+	//viper.AddConfigPath("/Users/congcong/uco/sso/utils/")
+	//viper.SetConfigFile(".env") // REQUIRED if the config file does not have the extension in the name
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -84,7 +93,7 @@ func Init() *env.Env {
 		Path:   "/",
 		MaxAge: config.SessionLifetime,
 	})
-	serverEnv := env.NewEnv(config, db, store, redisPool, env.WithUniversalTranslator(uni))
+	serverEnv := env.NewEnv(config, db, store, redisPool, env.WithUniversalTranslator(uni), env.WithRootDir(rootPath))
 	gob.Register(&models.User{})
 
 	return serverEnv

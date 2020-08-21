@@ -32,6 +32,7 @@ type Env struct {
 	sessionStore sessions.Store
 	redisPool    *redis.Pool
 	config       Config
+	rootDir      string
 }
 
 func (e *Env) Config() Config {
@@ -68,6 +69,12 @@ func WithUniversalTranslator(t *ut.UniversalTranslator) func(env *Env) {
 	}
 }
 
+func WithRootDir(path string) func(env *Env) {
+	return func(env *Env) {
+		env.rootDir = path
+	}
+}
+
 func (e *Env) GetUniversalTranslator() *ut.UniversalTranslator {
 	return e.translator
 }
@@ -76,8 +83,12 @@ func (e *Env) GetDB() *gorm.DB {
 	return e.db
 }
 
-func (e *Env) DBTransaction(fn func (tx *gorm.DB) error) error {
+func (e *Env) DBTransaction(fn func(tx *gorm.DB) error) error {
 	return e.db.Transaction(func(tx *gorm.DB) error {
 		return fn(tx)
 	})
+}
+
+func (e *Env) RootDir() string {
+	return e.rootDir
 }

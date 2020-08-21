@@ -219,8 +219,8 @@ func (user *UserController) Destroy(ctx *gin.Context) {
 		return
 	}
 	if err := user.env.DBTransaction(func(tx *gorm.DB) error {
-		tx.Model(user).Association("Roles").Clear()
-		tx.Model(user).Association("Permissions").Clear()
+		tx.Model(byId).Association("Roles").Clear()
+		tx.Model(byId).Association("Permissions").Clear()
 		tx.Delete(byId)
 
 		return nil

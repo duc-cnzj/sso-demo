@@ -129,14 +129,3 @@ func (auth *authController) AccessToken(c *gin.Context) {
 
 	c.JSON(400, gin.H{"error": "bad request"})
 }
-
-func (auth *authController) Info(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	user := userCtx.(models.User)
-	if !user.TokenExpired(auth.env) {
-		c.JSON(200, gin.H{"data": user})
-		return
-	}
-
-	c.JSON(401, gin.H{"code": 401})
-}

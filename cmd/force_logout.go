@@ -17,7 +17,7 @@ func main() {
 	flag.Parse()
 
 	if userId > 0 {
-		env := server.Init()
+		env := server.Init(".env", "")
 		user := models.User{}.FindById(uint(userId), env)
 		user.ForceLogout(env)
 		log.Println("success")

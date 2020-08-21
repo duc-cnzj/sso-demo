@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -9,13 +10,22 @@ import (
 	"sso/utils/interrupt"
 )
 
+var envPath string
+var rootPath string
+
+func init() {
+	flag.StringVar(&envPath, "config", ".env", "-config")
+	flag.StringVar(&rootPath, "root", "", "-root")
+}
+
 func main() {
+	flag.Parse()
 	ctx, done := interrupt.Context()
 	defer done()
 
 	r := gin.Default()
 
-	serverEnv := server.Init()
+	serverEnv := server.Init(envPath, rootPath)
 
 	routes.Init(r, serverEnv)
 	go func() {
