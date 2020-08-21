@@ -9,14 +9,14 @@ import (
 	"sso/utils/form"
 )
 
-func ModelNotFound(ctx *gin.Context, modelName string)  {
+func ModelNotFound(ctx *gin.Context, modelName string) {
 	ctx.AbortWithStatusJSON(404, gin.H{
 		"code": 404,
-		"msg": modelName + " not found!",
+		"msg":  modelName + " not found!",
 	})
 }
 
-func ValidateException(ctx *gin.Context, errors interface{}, env  *env.Env)  {
+func ValidateException(ctx *gin.Context, errors interface{}, env *env.Env) {
 	switch errors.(type) {
 	case validator.ValidationErrors:
 		err := errors.(validator.ValidationErrors)

@@ -51,7 +51,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 	printErrorBack := func() {
 		ctx.HTML(200, "login.tmpl", LoginFormVal{
 			RedirectUrl: redirectUrl,
-			Errors: []string{"username or password error."},
+			Errors:      []string{"username or password error."},
 		})
 	}
 

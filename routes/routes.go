@@ -22,15 +22,15 @@ func Init(router *gin.Engine, env *env.Env) {
 	router.Use(cors.New(config))
 	router.Use(sessions.Sessions("sso", env.SessionStore()), i18n.I18nMiddleware(env))
 
-	router.Static("/assets", env.RootDir() + "resources/views/web/css")
-	router.Static("/images", env.RootDir() + "resources/views/web/images")
+	router.Static("/assets", env.RootDir()+"resources/views/web/css")
+	router.Static("/images", env.RootDir()+"resources/views/web/images")
 
-	router.Static("/static/css", env.RootDir() + "resources/views/admin/static/css")
-	router.Static("/static/fonts", env.RootDir() + "resources/views/admin/static/fonts")
-	router.Static("/static/img", env.RootDir() + "resources/views/admin/static/img")
-	router.Static("/static/js", env.RootDir() + "resources/views/admin/static/js")
-	router.LoadHTMLFiles(env.RootDir() + "resources/views/web/login.tmpl", env.RootDir()+"resources/views/web/select_system.tmpl", env.RootDir() + "resources/views/admin/index.html")
-	router.StaticFile("/favicon.ico", env.RootDir() + "resources/views/admin/favicon.ico")
+	router.Static("/static/css", env.RootDir()+"resources/views/admin/static/css")
+	router.Static("/static/fonts", env.RootDir()+"resources/views/admin/static/fonts")
+	router.Static("/static/img", env.RootDir()+"resources/views/admin/static/img")
+	router.Static("/static/js", env.RootDir()+"resources/views/admin/static/js")
+	router.LoadHTMLFiles(env.RootDir()+"resources/views/web/login.tmpl", env.RootDir()+"resources/views/web/select_system.tmpl", env.RootDir()+"resources/views/admin/index.html")
+	router.StaticFile("/favicon.ico", env.RootDir()+"resources/views/admin/favicon.ico")
 	// for debug
 	//router.LoadHTMLGlob("/Users/congcong/uco/sso/resources/views/*")
 
@@ -91,6 +91,6 @@ func Init(router *gin.Engine, env *env.Env) {
 	}
 
 	router.Any("/admin/*action", func(ctx *gin.Context) {
-		ctx.HTML(http.StatusOK, "index.html",nil)
+		ctx.HTML(http.StatusOK, "index.html", nil)
 	})
 }
