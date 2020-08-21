@@ -1,4 +1,2 @@
 .env
-admin/node_modules
-admin/dist
 resources/views/admin

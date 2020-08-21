@@ -1,9 +1,9 @@
 FROM node:lts-alpine as build-stage
 WORKDIR /app
-COPY admin/package*.json ./
+COPY web ./
 RUN yarn config set registry http://registry.npm.taobao.org/ \
     && yarn install
-COPY admin .
+COPY web .
 RUN yarn run build:prod
 
 FROM golang:1.14-alpine AS builder
