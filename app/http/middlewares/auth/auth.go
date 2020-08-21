@@ -60,10 +60,10 @@ func GuestMiddleware(env *env.Env) gin.HandlerFunc {
 // 如果用户做了登出操作(不管是在sso登出还是在a.com登出)，则都会改变token，导致sso登录过期
 func CheckLogoutTokenIsChanged(sessionLogoutToken string, id uint, env *env.Env) bool {
 	user := models.User{}.FindById(id, env)
-	log.Println("sessionLogoutToken", sessionLogoutToken, user.Password)
 	if user == nil {
 		return true
 	}
+	log.Println("sessionLogoutToken", sessionLogoutToken, user.Password)
 
 	if user.LogoutToken != "" && user.LogoutToken != sessionLogoutToken {
 		return true
