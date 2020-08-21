@@ -40,7 +40,7 @@ func (*authController) LoginForm(ctx *gin.Context) {
 
 func (auth *authController) Login(ctx *gin.Context) {
 	var loginForm LoginForm
-
+	redirectUrl := ctx.Query("redirect_url")
 	if err := ctx.ShouldBind(&loginForm); err != nil {
 		exception.ValidateException(ctx, err, auth.env)
 
@@ -50,6 +50,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 	user := models.User{}.FindByEmail(loginForm.UserName, auth.env)
 	printErrorBack := func() {
 		ctx.HTML(200, "login.tmpl", LoginFormVal{
+			RedirectUrl: redirectUrl,
 			Errors: []string{"username or password error."},
 		})
 	}

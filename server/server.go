@@ -26,9 +26,6 @@ func Init(configPath string, rootPath string) *env.Env {
 		viper.AddConfigPath(".")
 	}
 	viper.SetConfigFile(configPath)
-	//viper.AddConfigPath(".")
-	//viper.AddConfigPath("/Users/congcong/uco/sso/utils/")
-	//viper.SetConfigFile(".env") // REQUIRED if the config file does not have the extension in the name
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -52,7 +49,7 @@ func Init(configPath string, rootPath string) *env.Env {
 	zhLang := zh.New()
 	enLang := en.New()
 	uni := ut.New(enLang, zhLang, enLang)
-	db, err := gorm.Open(config.DbConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", config.DbUsername, config.DbPassword, config.DbHost, config.DbPort, config.DbDatabase))
+	db, err := gorm.Open(config.DbConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", config.DbUsername, config.DbPassword, config.DbHost, config.DbPort, config.DbDatabase))
 	if err != nil {
 		panic(err)
 	}
