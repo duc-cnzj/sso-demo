@@ -24,6 +24,7 @@ type Config struct {
 	RedisHost     string
 	RedisPassword string
 	RedisPort     uint
+	Debug         bool
 }
 
 type Env struct {
@@ -33,6 +34,10 @@ type Env struct {
 	redisPool    *redis.Pool
 	config       Config
 	rootDir      string
+}
+
+func (e *Env) IsDebugging() bool {
+	return e.config.Debug
 }
 
 func (e *Env) Config() Config {

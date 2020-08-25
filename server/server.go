@@ -34,6 +34,7 @@ func Init(configPath string, rootPath string) *env.Env {
 	if gin.IsDebugging() {
 		fmt.Printf(`
 			AppPort:             %d,
+			Debug:               %t,
 			DBConnection:        %s,
 			DBHost:              %s,
 			DBPort:              %d,
@@ -47,6 +48,7 @@ func Init(configPath string, rootPath string) *env.Env {
 			AccessTokenLifetime: %d
 `,
 			config.AppPort,
+			config.Debug,
 			config.DBConnection,
 			config.DBHost,
 			config.DBPort,

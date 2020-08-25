@@ -38,6 +38,10 @@ func Init(router *gin.Engine, env *env.Env) {
 		c.JSON(404, gin.H{"code": 404, "message": "Page not found"})
 	})
 
+	router.Any("/ping", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{"success": true})
+	})
+
 	auth := authcontroller.New(env)
 
 	guest := router.Group("/", auth2.GuestMiddleware(env))

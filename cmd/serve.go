@@ -32,13 +32,13 @@ var serveCmd = &cobra.Command{
 
 		defer done()
 
-		r := gin.Default()
+		serverEnv := server.Init(envPath, rootPath)
 
-		if !debug {
+		if !serverEnv.IsDebugging() {
 			gin.SetMode(gin.ReleaseMode)
 		}
 
-		serverEnv := server.Init(envPath, rootPath)
+		r := gin.Default()
 
 		routes.Init(r, serverEnv)
 		go func() {
