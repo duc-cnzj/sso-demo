@@ -30,4 +30,6 @@ COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /bin/app /app/app
 COPY --from=builder /app/resources /app/resources/
 
-ENTRYPOINT ["/app/app", "serve", "--root", "/app/"]
+ENTRYPOINT ["/app/app"]
+
+CMD ["serve", "--root", "/app/"]
