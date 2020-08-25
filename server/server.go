@@ -70,7 +70,7 @@ func Init(configPath string, rootPath string) *env.Env {
 		log.Panicln(err)
 	}
 
-	password := ""
+	password := config.RedisPassword
 	redisPool := redisPool(config, password)
 
 	store := sessionStore(redisPool, config)
