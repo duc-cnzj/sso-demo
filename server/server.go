@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
@@ -12,6 +13,7 @@ import (
 	redis2 "github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/spf13/viper"
+	"log"
 	"path"
 	"sso/app/models"
 	"sso/config/env"
@@ -19,6 +21,66 @@ import (
 )
 
 func Init(configPath string, rootPath string) *env.Env {
+	var (
+		config env.Config
+		err    error
+		db     *gorm.DB
+	)
+
+	if config, err = ReadConfig(configPath); err != nil {
+		return nil
+	}
+
+	if gin.IsDebugging() {
+		fmt.Printf(`
+			AppPort:             %d,
+			DBConnection:        %s,
+			DBHost:              %s,
+			DBPort:              %d,
+			DBDatabase:          %s,
+			DBUsername:          %s,
+			DBPassword:          %s,
+			RedisHost:           %s,
+			RedisPassword:       %s,
+			RedisPort:           %d,
+			SessionLifetime:     %d,
+			AccessTokenLifetime: %d
+`,
+			config.AppPort,
+			config.DBConnection,
+			config.DBHost,
+			config.DBPort,
+			config.DBDatabase,
+			config.DBUsername,
+			config.DBPassword,
+			config.RedisHost,
+			config.RedisPassword,
+			config.RedisPort,
+			config.SessionLifetime,
+			config.AccessTokenLifetime,
+		)
+	}
+
+	zhLang := zh.New()
+	enLang := en.New()
+	uni := ut.New(enLang, zhLang, enLang)
+
+	if db, err = DB(config); err != nil {
+		log.Panicln(err)
+	}
+
+	password := ""
+	redisPool := redisPool(config, password)
+
+	store := sessionStore(redisPool, config)
+	serverEnv := env.NewEnv(config, db, store, redisPool, env.WithUniversalTranslator(uni), env.WithRootDir(rootPath))
+	gob.Register(&models.User{})
+
+	return serverEnv
+}
+
+func ReadConfig(configPath string) (env.Config, error) {
+	var err error
 	if configPath == "" {
 		configPath = ".env"
 	}
@@ -26,32 +88,33 @@ func Init(configPath string, rootPath string) *env.Env {
 		viper.AddConfigPath(".")
 	}
 	viper.SetConfigFile(configPath)
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+
+	if err = viper.ReadInConfig(); err != nil {
+		return env.Config{}, err
 	}
+
 	config := env.Config{
 		AppPort:             viper.GetUint("APP_PORT"),
-		DbConnection:        viper.GetString("DB_CONNECTION"),
-		DbHost:              viper.GetString("DB_HOST"),
-		DbPort:              viper.GetUint("DB_PORT"),
-		DbDatabase:          viper.GetString("DB_DATABASE"),
-		DbUsername:          viper.GetString("DB_USERNAME"),
-		DbPassword:          viper.GetString("DB_PASSWORD"),
+		DBConnection:        viper.GetString("DB_CONNECTION"),
+		DBHost:              viper.GetString("DB_HOST"),
+		DBPort:              viper.GetUint("DB_PORT"),
+		DBDatabase:          viper.GetString("DB_DATABASE"),
+		DBUsername:          viper.GetString("DB_USERNAME"),
+		DBPassword:          viper.GetString("DB_PASSWORD"),
 		RedisHost:           viper.GetString("REDIS_HOST"),
 		RedisPassword:       viper.GetString("REDIS_PASSWORD"),
 		RedisPort:           viper.GetUint("REDIS_PORT"),
 		SessionLifetime:     viper.GetInt("SESSION_LIFETIME"),
 		AccessTokenLifetime: viper.GetInt("ACCESS_TOKEN_LIFETIME"),
 	}
-	fmt.Println(config)
 
-	zhLang := zh.New()
-	enLang := en.New()
-	uni := ut.New(enLang, zhLang, enLang)
-	db, err := gorm.Open(config.DbConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", config.DbUsername, config.DbPassword, config.DbHost, config.DbPort, config.DbDatabase))
+	return config, nil
+}
+
+func DB(config env.Config) (*gorm.DB, error) {
+	db, err := gorm.Open(config.DBConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", config.DBUsername, config.DBPassword, config.DBHost, config.DBPort, config.DBDatabase))
 	if err != nil {
-		panic(err)
+		return db, err
 	}
 	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
 	db.DB().SetMaxIdleConns(10)
@@ -59,10 +122,22 @@ func Init(configPath string, rootPath string) *env.Env {
 	db.DB().SetMaxOpenConns(100)
 	// SetConnMaxLifetiment 设置连接的最大可复用时间。
 	db.DB().SetConnMaxLifetime(time.Hour)
-	db.LogMode(true)
+	if gin.IsDebugging() {
+		db.Debug()
+	}
+	return db, nil
+}
 
-	password := ""
+func sessionStore(redisPool *redis2.Pool, config env.Config) redis.Store {
+	store, _ := redis.NewStoreWithPool(redisPool, []byte("secret"))
+	store.Options(sessions.Options{
+		Path:   "/",
+		MaxAge: config.SessionLifetime,
+	})
+	return store
+}
 
+func redisPool(config env.Config, password string) *redis2.Pool {
 	redisPool := &redis2.Pool{
 		MaxIdle:     10,
 		IdleTimeout: 240 * time.Second,
@@ -85,13 +160,5 @@ func Init(configPath string, rootPath string) *env.Env {
 			return c, err
 		},
 	}
-	store, _ := redis.NewStoreWithPool(redisPool, []byte("secret"))
-	store.Options(sessions.Options{
-		Path:   "/",
-		MaxAge: config.SessionLifetime,
-	})
-	serverEnv := env.NewEnv(config, db, store, redisPool, env.WithUniversalTranslator(uni), env.WithRootDir(rootPath))
-	gob.Register(&models.User{})
-
-	return serverEnv
+	return redisPool
 }

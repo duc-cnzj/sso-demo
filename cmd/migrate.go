@@ -1,10 +1,13 @@
-package main
+package cmd
 
 import (
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"log"
 	"sso/app/models"
+	"sso/config/env"
+	"sso/server"
+
+	"github.com/spf13/cobra"
 )
 
 var migrateModels = []interface{}{
@@ -13,15 +16,31 @@ var migrateModels = []interface{}{
 	&models.Permission{},
 }
 
-func main() {
-	db, err := gorm.Open("mysql", "root:@/sso?charset=utf8mb4&parseTime=True&loc=Local")
-	if err != nil {
-		log.Fatal(err)
-	}
-	migrate := db.AutoMigrate(migrateModels...)
-	if migrate.Error != nil {
-		log.Fatal(migrate.Error.Error())
-	}
+var migrateCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: "数据库迁移",
+	Run: func(cmd *cobra.Command, args []string) {
+		var (
+			err    error
+			config env.Config
+			conn   *gorm.DB
+		)
+		if config, err = server.ReadConfig(envPath); err != nil {
+			log.Panicln(err)
+		}
+		conn, err = server.DB(config)
+		if err != nil {
+			log.Fatal(err)
+		}
+		migrate := conn.AutoMigrate(migrateModels...)
+		if migrate.Error != nil {
+			log.Fatal("migrate.Error", migrate.Error.Error())
+		}
 
-	log.Println("migrate ok!")
+		log.Println("migrate ok!")
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(migrateCmd)
 }

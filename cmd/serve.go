@@ -1,37 +1,56 @@
-package main
+package cmd
 
 import (
-	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
 	"sso/routes"
 	"sso/server"
 	"sso/utils/interrupt"
+	"strings"
+
+	"github.com/spf13/cobra"
 )
 
-var envPath string
 var rootPath string
 
-func init() {
-	flag.StringVar(&envPath, "config", ".env", "-config")
-	flag.StringVar(&rootPath, "root", "", "-root")
+var serveCmd = &cobra.Command{
+	Use:   "serve",
+	Short: "启动 sso 服务。",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if strings.HasSuffix(rootPath, "/") {
+			rootPath = strings.TrimSuffix(rootPath, "/")
+		}
+		rootPath = rootPath + "/"
+
+		fmt.Println("env file path: ", envPath)
+		fmt.Println("root path: ", rootPath)
+		fmt.Println("debug enabled: ", debug)
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx, done := interrupt.Context()
+
+		defer done()
+
+		r := gin.Default()
+
+		if !debug {
+			gin.SetMode(gin.ReleaseMode)
+		}
+
+		serverEnv := server.Init(envPath, rootPath)
+
+		routes.Init(r, serverEnv)
+		go func() {
+			log.Fatal(r.Run(fmt.Sprintf(":%d", serverEnv.Config().AppPort)))
+		}()
+
+		<-ctx.Done()
+		log.Println("server done by " + ctx.Err().Error())
+	},
 }
 
-func main() {
-	flag.Parse()
-	ctx, done := interrupt.Context()
-	defer done()
-
-	r := gin.Default()
-
-	serverEnv := server.Init(envPath, rootPath)
-
-	routes.Init(r, serverEnv)
-	go func() {
-		log.Fatal(r.Run(fmt.Sprintf(":%d", serverEnv.Config().AppPort)))
-	}()
-
-	<-ctx.Done()
-	log.Println("server done by " + ctx.Err().Error())
+func init() {
+	rootCmd.AddCommand(serveCmd)
+	serveCmd.Flags().StringVar(&rootPath, "root", ".", "静态资源路径, 必须是dir --root=/path/to/resources")
 }

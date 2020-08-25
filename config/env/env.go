@@ -13,12 +13,12 @@ type Config struct {
 	AccessTokenLifetime int
 
 	// db
-	DbConnection string
-	DbHost       string
-	DbPort       uint
-	DbDatabase   string
-	DbUsername   string
-	DbPassword   string
+	DBConnection string
+	DBHost       string
+	DBPort       uint
+	DBDatabase   string
+	DBUsername   string
+	DBPassword   string
 
 	// redis
 	RedisHost     string
@@ -66,6 +66,12 @@ func NewEnv(config Config, db *gorm.DB, sessionStore sessions.Store, pool *redis
 func WithUniversalTranslator(t *ut.UniversalTranslator) func(env *Env) {
 	return func(env *Env) {
 		env.translator = t
+	}
+}
+
+func WithDB(db *gorm.DB) func(env *Env) {
+	return func(env *Env) {
+		env.db = db
 	}
 }
 
