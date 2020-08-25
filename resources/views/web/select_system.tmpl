@@ -23,13 +23,13 @@
         #progress {
             position: absolute;
             background: #0069ec;
-            height: 100vh;
+            height: 90vh;
             width: 0;
             transition: width 0.2s ease-in-out;
         }
 
         .center {
-            height: 100vh;
+            height: 80vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -117,16 +117,60 @@
         .wrong #inputProgress {
             border-color: #ff2d26;
         }
+        .nav {
+            width: 100%;
+            height: 10vh;
+            background: #fff;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            box-shadow: 0 0 5px #2d3a4b;
+        }
+        .nav form {
+            height: 100%;
+        }
+        .logout-btn {
+            font-size: 16px;
+            padding: 15px;
+            margin-right: 20px;
+            margin-top: 10px;
+            float: right;
+            border: none;
+            background: #66b1ff;
+            outline: none;
+            box-shadow: 0 0 2px lightcyan;
+            border-radius: 10px;
+        }
+        .logout-btn:hover {
+            cursor: pointer;
+        }
+        .logout-btn:active {
+            transform: scale(1.2);
+            transition: .3s ease-out;
+        }
+        .nav ul {
+            list-style: none;
+            float: left;
+        }
+        .nav ul .title {
+            font-size: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
+<div class="nav">
+    <ul>
+        <li class="title">SSO</li>
+    </ul>
+    <form action="/auth/logout" method="post" class="logout">
+        <button class="logout-btn">登出</button>
+    </form>
+</div>
 <div id="progress"></div>
 
 <div class="center">
     <div id="register">
-
         <i id="progressButton" class="ion-android-arrow-forward next">GO</i>
-
         <div id="inputContainer">
             <input id="inputField" required autofocus />
             <label id="inputLabel"></label>
