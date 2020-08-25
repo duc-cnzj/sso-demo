@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
-	"github.com/gin-gonic/gin"
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
@@ -155,6 +154,7 @@ func redisPool(config env.Config, password string) *redis2.Pool {
 		Dial: func() (redis2.Conn, error) {
 			c, err := redis2.Dial("tcp", fmt.Sprintf("%s:%d", config.RedisHost, config.RedisPort))
 			if err != nil {
+				log.Panicln(err)
 				return nil, err
 			}
 			if password != "" {
