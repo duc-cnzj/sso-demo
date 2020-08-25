@@ -73,7 +73,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 	user.UpdateLastLoginAt(auth.env)
 
 	if loginForm.RedirectUrl == "" {
-		ctx.Redirect(302, "/auth/select_system")
+		ctx.Redirect(302, "/")
 		return
 	}
 
@@ -98,7 +98,13 @@ func (auth *authController) Logout(c *gin.Context) {
 }
 
 func (auth *authController) SelectSystem(c *gin.Context) {
-	c.HTML(200, "select_system.tmpl", nil)
+	u, _ := c.Get("user")
+	user := u.(*models.User)
+	c.HTML(200, "select_system.tmpl", struct {
+		AccessToken string
+	}{
+		AccessToken: user.GenerateAccessToken(auth.env),
+	})
 }
 
 func (auth *authController) AccessToken(c *gin.Context) {

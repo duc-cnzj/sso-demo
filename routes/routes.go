@@ -46,10 +46,10 @@ func Init(router *gin.Engine, env *env.Env) {
 		guest.POST("/login", auth.Login)
 	}
 
-	authRouter := router.Group("/auth", auth2.SessionMiddleware(env))
+	authRouter := router.Group("/", auth2.SessionMiddleware(env))
 	{
-		authRouter.GET("/select_system", auth.SelectSystem)
-		authRouter.GET("/logout", auth.Logout)
+		authRouter.GET("/", auth.SelectSystem)
+		authRouter.GET("/auth/logout", auth.Logout)
 	}
 
 	router.POST("/access_token", auth.AccessToken)

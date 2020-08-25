@@ -7,28 +7,228 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>选择系统</title>
     <style>
-        * {
+        body {
             margin: 0;
-            padding: 0;
-            list-style: none;
+            background: #25A3FF;
+            font-family: 'Roboto', sans-serif;
         }
 
-        .middle {
+        h1 {
+            position: relative;
+            color: #fff;
+            opacity: 0;
+            transition: .8s ease-in-out;
+        }
+
+        #progress {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            background: #0069ec;
+            height: 100vh;
+            width: 0;
+            transition: width 0.2s ease-in-out;
+        }
+
+        .center {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /******
+          Form
+         ******/
+
+        #register {
+            background: #fff;
+            position: relative;
+            width: 410px;
+            padding: 2px 15px 20px 15px;
+            box-shadow: 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12), 0 8px 10px -5px rgba(0,0,0,0.3);
+            transition: transform .1s ease-in-out;
+        }
+
+        #register.close {
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+            transition: .8s ease-in-out;
+            box-shadow: 0 16px 24px 2px rgba(0,0,0,0);
+        }
+
+        .next {
+            position: absolute;
+            right: 20px;
+            bottom: 10px;
+            font-size: 40px;
+            color: #25a3ff;
+            float: right;
+            cursor: pointer;
+        }
+        .next:hover {color: #333}
+        .wrong .next {color: #ff2d26}
+        .close .next {color: #fff}
+
+        #inputContainer {
+            position: relative;
+            opacity: 0;
+            width: 350px;
+            margin-top: 25px;
+            transition: opacity .3s ease-in-out;
+        }
+
+        #inputContainer input {
+            width: 100%;
+            padding: 0 5px;
+            border: none;
+            font-size: 20px;
+            font-weight: bold;
+            outline: 0;
+            background: transparent;
+            box-shadow:none;
+        }
+
+        #inputLabel {
+            position: absolute;
+            pointer-events: none;
+            top: 0;
+            left: 0;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 0 5px;
+            transition: .2s ease-in-out;
+        }
+
+        #inputContainer input:valid + #inputLabel {
+            top: -15px;
+            font-size: 11px;
+            font-weight: normal;
+            color: #9e9e9e;
+        }
+
+        #inputProgress {
+            position: absolute;
+            border-bottom: 2px solid #25a3ff;
+            padding: 3px 0;
+            width: 0;
+            transition: width .6s ease-in-out;
+        }
+
+        .wrong #inputProgress {
+            border-color: #ff2d26;
         }
     </style>
 </head>
 <body>
-<div class="middle">
-    <ul>
-        {{/*            todo 点击生成access_token并且链接跳转*/}}
-        <li><a href="/login?redirect_url=http://baidu.com">OMS</a></li>
-        <li><a href="/login?redirect_url=http://baidu.com">TMS</a></li>
-        <li><a href="/login?redirect_url=http://baidu.com">CRM</a></li>
-    </ul>
+<div id="progress"></div>
+
+<div class="center">
+    <div id="register">
+
+        <i id="progressButton" class="ion-android-arrow-forward next">GO</i>
+
+        <div id="inputContainer">
+            <input id="inputField" required autofocus />
+            <label id="inputLabel"></label>
+            <div id="error"></div>
+            <div id="inputProgress"></div>
+        </div>
+
+    </div>
 </div>
 </body>
+<script>
+    var errEle = document.getElementById("error")
+    var questions = [
+            {question:"where you want to go?", pattern: "^(https?:\\/\\/(([a-zA-Z0-9]+-?)+[a-zA-Z0-9]+\\.)+[a-zA-Z]+)(:\\d+)?$", "msg": "格式不对哦"},
+        ]
+
+    ;(function(){
+
+        var tTime = 100
+        var wTime = 200
+        var eTime = 1000
+
+        var position = 0
+
+        putQuestion()
+
+        progressButton.addEventListener('click', validate)
+        inputField.addEventListener('keyup', function(e){
+            transform(0, 0)
+            errEle.innerHTML = ""
+            if(e.keyCode == 13) validate()
+        })
+
+        function putQuestion() {
+            inputLabel.innerHTML = questions[position].question
+            inputField.value = ''
+            inputField.type = questions[position].type || 'text'
+            inputField.focus()
+            showCurrent()
+        }
+
+        function done() {
+            register.className = 'close'
+
+            setTimeout(function() {
+                window.location = inputField.value + "?access_token="+{{.AccessToken}}
+            }, eTime)
+        }
+
+        function validate() {
+            questions[position].value = inputField.value
+
+            if (!inputField.value.match(questions[position].pattern || /.+/)) wrong()
+            else ok(function() {
+
+                progress.style.width = ++position * 100 / questions.length + 'vw'
+
+                if (questions[position]) hideCurrent(putQuestion)
+                else hideCurrent(done)
+
+            })
+
+        }
+
+        // helper
+        // --------------
+
+        function hideCurrent(callback) {
+            inputContainer.style.opacity = 0
+            inputProgress.style.transition = 'none'
+            inputProgress.style.width = 0
+            setTimeout(callback, wTime)
+        }
+
+        function showCurrent(callback) {
+            inputContainer.style.opacity = 1
+            inputProgress.style.transition = ''
+            inputProgress.style.width = '100%'
+            setTimeout(callback, wTime)
+        }
+
+        function transform(x, y) {
+            register.style.transform = 'translate(' + x + 'px ,  ' + y + 'px)'
+        }
+
+        function ok(callback) {
+            register.className = ''
+            setTimeout(transform, tTime * 0, 0, 10)
+            setTimeout(transform, tTime * 1, 0, 0)
+            setTimeout(callback,  tTime * 2)
+        }
+
+        function wrong(callback) {
+            if (questions[position].msg) {
+                errEle.innerHTML = questions[position].msg
+            }
+            register.className = 'wrong'
+            for(var i = 0; i < 6; i++) // shaking motion
+                setTimeout(transform, tTime * i, (i%2*2-1)*20, 0)
+            setTimeout(transform, tTime * 6, 0, 0)
+            setTimeout(callback,  tTime * 7)
+        }
+    }())
+</script>
 </html>
