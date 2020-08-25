@@ -31,7 +31,7 @@ func Init(configPath string, rootPath string) *env.Env {
 		return nil
 	}
 
-	if gin.IsDebugging() {
+	if config.Debug {
 		fmt.Printf(`
 			AppPort:             %d,
 			Debug:               %t,
@@ -125,14 +125,18 @@ func DB(config env.Config) (*gorm.DB, error) {
 	db.DB().SetMaxOpenConns(100)
 	// SetConnMaxLifetiment 设置连接的最大可复用时间。
 	db.DB().SetConnMaxLifetime(time.Hour)
-	if gin.IsDebugging() {
+	if config.Debug {
 		db.Debug()
 	}
 	return db, nil
 }
 
 func sessionStore(redisPool *redis2.Pool, config env.Config) redis.Store {
-	store, _ := redis.NewStoreWithPool(redisPool, []byte("secret"))
+	store, err := redis.NewStoreWithPool(redisPool, []byte("secret"))
+	if err != nil {
+		log.Panicln(err)
+		return nil
+	}
 	store.Options(sessions.Options{
 		Path:   "/",
 		MaxAge: config.SessionLifetime,
