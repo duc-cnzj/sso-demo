@@ -20,7 +20,7 @@ RUN go env -w GOPROXY=https://goproxy.io && \
     go mod tidy -v
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-w -s" -o /bin/app cmd/serve.go
+    go build -ldflags="-w -s" -o /bin/app main.go
 
 #FROM alpine
 FROM scratch
