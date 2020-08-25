@@ -97,6 +97,7 @@ func ReadConfig(configPath string) (env.Config, error) {
 
 	config := env.Config{
 		AppPort:             viper.GetUint("APP_PORT"),
+		Debug:               viper.GetBool("DEBUG"),
 		DBConnection:        viper.GetString("DB_CONNECTION"),
 		DBHost:              viper.GetString("DB_HOST"),
 		DBPort:              viper.GetUint("DB_PORT"),
