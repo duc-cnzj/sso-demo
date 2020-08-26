@@ -188,6 +188,11 @@ func (user *User) SyncPermissions(permissions []interface{}, env *env.Env) error
 	})
 }
 
+// 登出用户，为了保证一处登出，处处登出，必须重置 api_token 和 logout_token
+// api_token 重置之后会重定向到 sso login page, 但是 sso 依然是登陆状态
+// 所以 sso 会重新生成 api_token，导致登出没有效果
+// 因此引入 logout_token 如果 sso session 中的 logout_token 不一样，那么代表强制登出
+// 以此来保证 用户登出时，api_token 失效，并且 sso 也登陆过期
 func (user *User) ForceLogout(env *env.Env) {
 	user.GenerateApiToken(env, true)
 	user.GenerateLogoutToken(env)

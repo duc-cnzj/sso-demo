@@ -78,6 +78,7 @@ func (auth *authController) Logout(c *gin.Context) {
 	c.JSON(204, nil)
 }
 
+// 这个info和web.authcontroller.Info 获取的数据是一样的
 func (auth *authController) Info(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(*models.User)

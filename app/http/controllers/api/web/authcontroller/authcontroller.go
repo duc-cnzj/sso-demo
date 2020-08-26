@@ -29,9 +29,7 @@ func (auth *authController) Logout(c *gin.Context) {
 	u, exists := c.Get("user")
 	if exists {
 		user := u.(*models.User)
-		// 让用户的api调用不能再使用
-		user.GenerateApiToken(auth.env, true)
-		user.GenerateLogoutToken(auth.env)
+		user.ForceLogout(auth.env)
 	}
 
 	c.JSON(204, nil)

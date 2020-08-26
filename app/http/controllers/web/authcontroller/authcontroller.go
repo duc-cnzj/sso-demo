@@ -88,10 +88,7 @@ func (auth *authController) Logout(c *gin.Context) {
 	session.Clear()
 	session.Save()
 	if ok {
-		// 让用户的api调用不能再使用
-		user.GenerateApiToken(auth.env, true)
-		// 登出sso系统
-		user.GenerateLogoutToken(auth.env)
+		user.ForceLogout(auth.env)
 	}
 
 	c.Redirect(302, "/login")
