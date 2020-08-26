@@ -1,7 +1,7 @@
 package models
 
 import (
-	"log"
+	"github.com/rs/zerolog/log"
 	"sso/config/env"
 	"time"
 )
@@ -24,7 +24,7 @@ func (r Permission) FindByIds(ids []uint, env *env.Env) []*Permission {
 	var permissions []*Permission
 	err := env.GetDB().Where("id in (?)", ids).Find(&permissions)
 	if err.Error != nil {
-		log.Println("Permission FindByIds", err)
+		log.Debug().Err(err.Error).Msg("Permission FindByIds")
 		return nil
 	}
 
@@ -35,7 +35,7 @@ func (r Permission) FindById(id uint, env *env.Env) *Permission {
 	var permission = &Permission{}
 	err := env.GetDB().Where("id = ?", id).First(&permission)
 	if err.Error != nil {
-		log.Println("Permission FindById", err)
+		log.Debug().Err(err.Error).Msg("Permission FindById")
 		return nil
 	}
 
@@ -46,7 +46,8 @@ func (r Permission) FindByName(name string, env *env.Env) *Permission {
 	var permission = &Permission{}
 	err := env.GetDB().Where("name = ?", name).First(&permission)
 	if err.Error != nil {
-		log.Println("Permission FindByName", err)
+		log.Debug().Err(err.Error).Msg("Permission FindByName")
+
 		return nil
 	}
 

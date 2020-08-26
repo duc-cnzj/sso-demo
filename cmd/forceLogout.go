@@ -17,9 +17,9 @@ var forceLogoutCmd = &cobra.Command{
 	Short: "强制用户登出",
 	Run: func(cmd *cobra.Command, args []string) {
 		var (
-			err error
+			err    error
 			config env.Config
-			db *gorm.DB
+			db     *gorm.DB
 		)
 
 		if config, err = server.ReadConfig(envPath); err != nil {

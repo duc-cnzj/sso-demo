@@ -1,7 +1,7 @@
 package models
 
 import (
-	"log"
+	"github.com/rs/zerolog/log"
 	"sso/config/env"
 	"time"
 )
@@ -22,7 +22,7 @@ type Role struct {
 func (Role) FindByIds(ids []uint, env *env.Env) []*Role {
 	var roles []*Role
 	if err := env.GetDB().Where("id in (?)", ids).Find(&roles).Error; err != nil {
-		log.Println("findById", err)
+		log.Debug().Err(err).Msg("FindByIds")
 		return nil
 	}
 
@@ -31,9 +31,8 @@ func (Role) FindByIds(ids []uint, env *env.Env) []*Role {
 
 func (Role) FindById(id uint, env *env.Env) *Role {
 	r := &Role{}
-	err := env.GetDB().Where("id = ?", id).First(r)
-	if err.Error != nil {
-		log.Println("findById", err)
+	if err := env.GetDB().Where("id = ?", id).First(r).Error; err != nil {
+		log.Debug().Err(err).Msg("findById")
 		return nil
 	}
 
@@ -42,26 +41,27 @@ func (Role) FindById(id uint, env *env.Env) *Role {
 
 func (r Role) FindByName(name string, env *env.Env) *Role {
 	role := &Role{}
-	err := env.GetDB().Where("name = ?", name).First(role)
-	if err.Error != nil {
-		log.Println("FindByName", err)
+
+	if err := env.GetDB().Where("name = ?", name).First(role).Error; err != nil {
+		log.Debug().Err(err).Msg("FindByName")
+
 		return nil
 	}
-	log.Println(role)
+	log.Debug().Interface("role", role).Msg("FindByName")
 
 	return role
 }
 
 func (r Role) FindByIdWithPermissions(id uint, env *env.Env) *Role {
 	role := &Role{}
-	err := env.GetDB().
+
+	if err := env.GetDB().
 		Preload("Permissions").
-		First(role, "id = ?", id)
-	if err.Error != nil {
-		log.Println("FindByIdWithPermissions", err)
+		First(role, "id = ?", id).Error; err != nil {
+		log.Debug().Err(err).Msg("FindByIdWithPermissions")
 		return nil
 	}
-	log.Println(role)
+	log.Debug().Interface("role", role).Msg("FindByName")
 
 	return role
 }

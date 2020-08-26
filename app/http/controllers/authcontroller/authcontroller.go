@@ -4,8 +4,8 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/gomodule/redigo/redis"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
 	"sso/app/models"
 	"sso/config/env"
@@ -68,7 +68,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	session.Set("user", user)
 	err := session.Save()
-	log.Println(err)
+	log.Debug().Err(err).Msg("authController.Login")
 
 	user.UpdateLastLoginAt(auth.env)
 
@@ -117,18 +117,19 @@ func (auth *authController) AccessToken(c *gin.Context) {
 		return
 	}
 
-	log.Println(jsonData.AccessToken)
+	log.Debug().Msg(jsonData.AccessToken)
+
 	conn := auth.env.RedisPool().Get()
 
 	defer conn.Close()
 
 	id, err := redis.Int(conn.Do("GET", jsonData.AccessToken))
-	log.Println(id, err)
+	log.Debug().Err(err).Interface("id", id).Msg("authController.AccessToken")
 	if err == nil {
 		user := models.User{}.FindById(uint(id), auth.env)
 		if user != nil {
 			do, err := conn.Do("DEL", jsonData.AccessToken)
-			log.Println("delete access token", do, err)
+			log.Debug().Err(err).Interface("do", do).Msg("delete access token")
 			c.JSON(200, gin.H{"api_token": user.GenerateApiToken(auth.env, false), "expire_seconds": auth.env.Config().AccessTokenLifetime})
 			return
 		}

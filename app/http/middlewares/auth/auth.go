@@ -3,7 +3,7 @@ package auth
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"log"
+	"github.com/rs/zerolog/log"
 	"sso/app/models"
 	"sso/config/env"
 )
@@ -12,7 +12,7 @@ func SessionMiddleware(env *env.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		user, ok := session.Get("user").(*models.User)
-		log.Println(user, ok)
+		log.Debug().Interface("user", user).Msg("SessionMiddleware")
 		if ok {
 			if !CheckLogoutTokenIsChanged(user.LogoutToken, user.ID, env) {
 				c.Set("user", user)
@@ -63,7 +63,10 @@ func CheckLogoutTokenIsChanged(sessionLogoutToken string, id uint, env *env.Env)
 	if user == nil {
 		return true
 	}
-	log.Println("sessionLogoutToken", sessionLogoutToken, user.Password)
+	log.Debug().Fields(map[string]interface{}{
+		"sessionLogoutToken": sessionLogoutToken,
+		"user.Password":      user.Password,
+	}).Msg("sessionLogoutToken")
 
 	if user.LogoutToken != "" && user.LogoutToken != sessionLogoutToken {
 		return true

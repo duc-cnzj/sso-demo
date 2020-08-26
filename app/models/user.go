@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/jinzhu/gorm"
-	"log"
+	"github.com/rs/zerolog/log"
 	"sso/config/env"
 	"sso/utils/helper"
 	"time"
@@ -34,10 +34,8 @@ func (User) TableName() string {
 func (User) FindWithRoles(id int, env *env.Env) *User {
 	user := &User{}
 
-	err := env.GetDB().Preload("Roles").Where("id = ?", id).First(user)
-	if err.Error != nil {
-		log.Println("FindWithRoles", err)
-		return nil
+	if err := env.GetDB().Preload("Roles").Where("id = ?", id).First(user).Error; err != nil {
+		log.Debug().Err(err).Msg("FindWithRoles")
 	}
 
 	return user
@@ -45,9 +43,8 @@ func (User) FindWithRoles(id int, env *env.Env) *User {
 func (User) FindByEmail(email string, env *env.Env, wheres ...interface{}) *User {
 	user := &User{}
 
-	err := env.GetDB().Where("email = ?", email).First(user, wheres...)
-	if err.Error != nil {
-		log.Println("findByEmail", err)
+	if err := env.GetDB().Where("email = ?", email).First(user, wheres...).Error; err != nil {
+		log.Debug().Err(err).Msg("findByEmail")
 		return nil
 	}
 
@@ -57,9 +54,9 @@ func (User) FindByEmail(email string, env *env.Env, wheres ...interface{}) *User
 func (User) FindById(id uint, env *env.Env) *User {
 	user := &User{}
 
-	err := env.GetDB().Where("id = ?", id).First(user)
-	if err.Error != nil {
-		log.Println("findById", err)
+	if err := env.GetDB().Where("id = ?", id).First(user).Error; err != nil {
+		log.Debug().Err(err).Msg("FindById")
+
 		return nil
 	}
 
@@ -69,9 +66,8 @@ func (User) FindById(id uint, env *env.Env) *User {
 func (User) FindByToken(token string, env *env.Env) *User {
 	user := &User{}
 
-	err := env.GetDB().Where("api_token = ?", token).First(user)
-	if err.Error != nil {
-		log.Println("FindByToken", err)
+	if err := env.GetDB().Where("api_token = ?", token).First(user).Error; err != nil {
+		log.Debug().Err(err).Msg("FindByToken")
 		return nil
 	}
 
@@ -114,7 +110,7 @@ func (user *User) GenerateAccessToken(env *env.Env) string {
 			} else {
 				reply, err = conn.Do("SET", str, user.ID)
 			}
-			log.Println(reply, err)
+			log.Debug().Err(err).Interface("reply", reply).Msg("GenerateAccessToken")
 			if err == nil {
 				return str
 			}
@@ -127,7 +123,7 @@ func (user *User) GenerateAccessToken(env *env.Env) string {
 func (user *User) GenerateApiToken(env *env.Env, forceFill bool) string {
 	var try int
 
-	log.Println(user)
+	log.Debug().Interface("user", user).Msg("GenerateApiToken")
 	// 如果生成过token，并且没过期，则直接返回
 	if !forceFill &&
 		user.ApiToken.Valid &&

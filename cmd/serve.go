@@ -45,7 +45,7 @@ var serveCmd = &cobra.Command{
 			log.Info().Msg("############### debug mode ###############")
 		}
 
-		r:=gin.New()
+		r := gin.New()
 		r.Use(gin.Recovery())
 		//r := gin.Default()
 
