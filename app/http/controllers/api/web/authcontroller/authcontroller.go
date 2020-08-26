@@ -31,6 +31,7 @@ func (auth *authController) Logout(c *gin.Context) {
 		user := u.(*models.User)
 		// 让用户的api调用不能再使用
 		user.GenerateApiToken(auth.env, true)
+		user.GenerateLogoutToken(auth.env)
 	}
 
 	c.JSON(204, nil)
