@@ -131,7 +131,7 @@ func DB(config env.Config) (*gorm.DB, error) {
 	// SetConnMaxLifetiment 设置连接的最大可复用时间。
 	db.DB().SetConnMaxLifetime(time.Hour)
 	if config.Debug {
-		db.Debug()
+		db.LogMode(true)
 	}
 	return db, nil
 }
