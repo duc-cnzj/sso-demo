@@ -25,7 +25,6 @@ var serveCmd = &cobra.Command{
 
 		fmt.Println("env file path: ", envPath)
 		fmt.Println("root path: ", rootPath)
-		fmt.Println("debug enabled: ", debug)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx, done := interrupt.Context()

@@ -6,7 +6,6 @@ import (
 	"os"
 )
 
-var debug bool
 var envPath string
 
 var rootCmd = &cobra.Command{
@@ -23,5 +22,4 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&envPath, "env", "", "--env=/path/to/.env")
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", true, "--debug")
 }
