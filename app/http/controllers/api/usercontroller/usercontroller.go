@@ -3,9 +3,10 @@ package usercontroller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"math"
+
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"
@@ -56,6 +57,7 @@ func (user *UserController) Index(ctx *gin.Context) {
 		exception.ValidateException(ctx, err, user.env)
 		return
 	}
+	log.Debug().Interface("query", query).Msg("UserController.Index")
 	var users []models.User
 	if query.PageSize <= 0 {
 		query.PageSize = 15
@@ -109,7 +111,7 @@ func (user *UserController) Store(ctx *gin.Context) {
 	var input StoreInput
 	if err := ctx.ShouldBind(&input); err != nil {
 		exception.ValidateException(ctx, err, user.env)
-		log.Println("UserController Store err: ", err)
+		log.Info().Err(err).Msg("UserController.Store")
 		return
 	}
 
@@ -127,7 +129,7 @@ func (user *UserController) Store(ctx *gin.Context) {
 
 	password, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Panicln("UserController GenerateFromPassword", err)
+		log.Panic().Err(err).Msg("UserController.GenerateFromPassword")
 		return
 	}
 	newUser := &models.User{
@@ -137,7 +139,7 @@ func (user *UserController) Store(ctx *gin.Context) {
 	}
 	res := user.env.GetDB().Create(newUser)
 	if res.Error != nil {
-		log.Panicln(res.Error.Error())
+		log.Panic().Err(res.Error).Msg("UserController.GenerateFromPassword")
 	}
 
 	ctx.JSON(201, gin.H{"code": 201, "data": newUser})
@@ -146,7 +148,7 @@ func (user *UserController) Store(ctx *gin.Context) {
 func (user *UserController) Show(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panicln("UserController Show err: ", err)
+		log.Panic().Err(err).Msg("UserController.Show")
 		return
 	}
 
@@ -163,12 +165,13 @@ func (user *UserController) Update(ctx *gin.Context) {
 	var input UpdateInput
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panicln("UserController Show err: ", err)
+		log.Panic().Err(err).Msg("UserController.Update")
 		return
 	}
 	if err := ctx.ShouldBind(&input); err != nil {
 		exception.ValidateException(ctx, err, user.env)
-		log.Println("UserController Update err: ", err)
+		log.Panic().Err(err).Msg("UserController.Update")
+
 		return
 	}
 
@@ -200,7 +203,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 	}
 	e := user.env.GetDB().Model(byId).Update(updates...)
 	if e.Error != nil {
-		log.Panicln(e.Error.Error())
+		log.Panic().Err(e.Error).Msg("UserController.Update")
 	}
 
 	ctx.JSON(200, gin.H{"code": 200, "data": byId})
@@ -209,7 +212,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 func (user *UserController) Destroy(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panicln("UserController Destroy err: ", err)
+		log.Panic().Err(err).Msg("UserController.Destroy")
 		return
 	}
 
@@ -225,7 +228,7 @@ func (user *UserController) Destroy(ctx *gin.Context) {
 
 		return nil
 	}); err != nil {
-		log.Panicln("UserController Destroy err", err)
+		log.Panic().Err(err).Msg("UserController.Destroy")
 	}
 
 	ctx.JSON(204, nil)
@@ -235,14 +238,15 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 	var input SyncInput
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panicln("UserController Show err: ", err)
+		log.Panic().Err(err).Msg("UserController.SyncRoles")
+
 		return
 	}
-	log.Println("SyncInput: ", input.RoleIds)
+	log.Debug().Interface("SyncInput", input.RoleIds).Msg("UserController.SyncRoles")
 
 	if err := ctx.ShouldBind(&input); err != nil {
 		exception.ValidateException(ctx, err, user.env)
-		log.Println("UserController SyncRoles err: ", err)
+		log.Debug().Err(err).Msg("UserController.SyncRoles")
 		return
 	}
 	byId := models.User{}.FindById(uint(id), user.env)
@@ -254,7 +258,7 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 	userByIds := models.Role{}.FindByIds(input.RoleIds, user.env)
 
 	if err := byId.SyncRoles(userByIds, user.env); err != nil {
-		log.Panicln(err)
+		log.Panic().Err(err).Msg("UserController.SyncRoles")
 	}
 
 	ctx.JSON(200, gin.H{"data": models.User{}.FindWithRoles(id, user.env)})
@@ -263,7 +267,7 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 func (user *UserController) ForceLogout(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panicln("UserController Show err: ", err)
+		log.Panic().Err(err).Msg("UserController.ForceLogout")
 		return
 	}
 

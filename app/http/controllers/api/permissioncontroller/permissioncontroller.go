@@ -3,7 +3,7 @@ package permissioncontroller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"log"
+	"github.com/rs/zerolog/log"
 	"math"
 	"sso/app/models"
 	"sso/config/env"
@@ -49,7 +49,7 @@ func (p *PermissionController) Index(c *gin.Context) {
 		exception.ValidateException(c, err, p.env)
 		return
 	}
-	log.Println(query)
+	log.Debug().Interface("", query).Msg("PermissionController.Index.query")
 
 	var permissions []models.Permission
 	if query.PageSize <= 0 {
@@ -105,7 +105,7 @@ func (p *PermissionController) Store(c *gin.Context) {
 	var input StoreInput
 	if err := c.ShouldBind(&input); err != nil {
 		exception.ValidateException(c, err, p.env)
-		log.Println("PermissionController Store err: ", err)
+		log.Debug().Err(err).Msg("PermissionController Store err: ")
 		return
 	}
 
@@ -126,7 +126,7 @@ func (p *PermissionController) Store(c *gin.Context) {
 		Project: input.Project,
 	}
 	if err := p.env.GetDB().Create(pnew).Error; err != nil {
-		log.Panicln(err.Error())
+		log.Fatal().Msg(err.Error())
 	}
 
 	c.JSON(201, gin.H{"code": 201, "data": pnew})
@@ -135,7 +135,7 @@ func (p *PermissionController) Store(c *gin.Context) {
 func (p *PermissionController) Show(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("permission"))
 	if err != nil {
-		log.Panicln("PermissionController Show err: ", err)
+		log.Panic().Err(err).Msg("PermissionController Show err: ")
 		return
 	}
 
@@ -152,12 +152,12 @@ func (p *PermissionController) Update(c *gin.Context) {
 	var input UpdateInput
 	id, err := strconv.Atoi(c.Param("permission"))
 	if err != nil {
-		log.Panicln("PermissionController Show err: ", err)
+		log.Panic().Err(err).Msg("PermissionController Show err: ")
 		return
 	}
 	if err := c.ShouldBind(&input); err != nil {
 		exception.ValidateException(c, err, p.env)
-		log.Println("PermissionController Update err: ", err)
+		log.Debug().Err(err).Msg("PermissionController Update err: ")
 		return
 	}
 	permission := models.Permission{}.FindById(uint(id), p.env)
@@ -179,7 +179,7 @@ func (p *PermissionController) Update(c *gin.Context) {
 
 	e := p.env.GetDB().Model(permission).Update("name", input.Name, "project", input.Project)
 	if e.Error != nil {
-		log.Panicln(e.Error.Error())
+		log.Panic().Msg(e.Error.Error())
 	}
 	c.JSON(200, gin.H{"code": 200, "data": permission})
 }
@@ -187,7 +187,7 @@ func (p *PermissionController) Update(c *gin.Context) {
 func (p *PermissionController) Destroy(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("permission"))
 	if err != nil {
-		log.Panicln("PermissionController Destroy err: ", err)
+		log.Panic().Err(err).Msg("PermissionController Destroy err: ")
 		return
 	}
 
@@ -245,7 +245,7 @@ func (p *PermissionController) GetByGroups(c *gin.Context) {
 func (p *PermissionController) GetPermissionProjects(c *gin.Context) {
 	var res []models.Permission
 	if err := p.env.GetDB().Model(&models.Permission{}).Select([]string{"distinct project"}).Find(&res).Error; err != nil {
-		log.Panicln(err)
+		log.Panic().Err(err).Msg("PermissionController.GetPermissionProjects")
 	}
 
 	var items []string

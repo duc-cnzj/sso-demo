@@ -3,7 +3,7 @@ package rolecontroller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
-	"log"
+	"github.com/rs/zerolog/log"
 	"math"
 	"sso/app/models"
 	"sso/config/env"
@@ -49,7 +49,7 @@ func (role *RoleController) Index(ctx *gin.Context) {
 		exception.ValidateException(ctx, err, role.env)
 		return
 	}
-	log.Println(query)
+	log.Debug().Interface("query", query).Msg("RoleController.Index")
 
 	var roles []models.Role
 	if query.PageSize <= 0 {
@@ -100,7 +100,7 @@ func (role *RoleController) Store(ctx *gin.Context) {
 	input := &RoleStoreInput{}
 	if err := ctx.ShouldBind(input); err != nil {
 		exception.ValidateException(ctx, err, role.env)
-		log.Println("RoleController Store err: ", err)
+		log.Debug().Err(err).Msg("RoleController.Store")
 		return
 	}
 
@@ -140,7 +140,7 @@ func (role *RoleController) Store(ctx *gin.Context) {
 	})
 
 	if e != nil {
-		log.Panicln(e)
+		log.Panic().Err(e).Msg("RoleController.Store")
 	}
 
 	ctx.JSON(201, gin.H{"code": 201, "data": models.Role{}.FindByIdWithPermissions(r.ID, role.env)})
@@ -149,7 +149,8 @@ func (role *RoleController) Store(ctx *gin.Context) {
 func (role *RoleController) Show(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("role"))
 	if err != nil {
-		log.Panicln("RoleController Show err: ", err)
+		log.Panic().Err(err).Msg("RoleController.Show")
+
 		return
 	}
 
@@ -166,12 +167,14 @@ func (role *RoleController) Update(ctx *gin.Context) {
 	var input RoleUpdateInput
 	id, err := strconv.Atoi(ctx.Param("role"))
 	if err != nil {
-		log.Panicln("RoleController Show err: ", err)
+		log.Panic().Err(err).Msg("RoleController.Update")
+
 		return
 	}
 	if err := ctx.ShouldBind(&input); err != nil {
 		exception.ValidateException(ctx, err, role.env)
-		log.Println("RoleController Update err: ", err)
+		log.Debug().Err(err).Msg("RoleController.Update")
+
 		return
 	}
 
@@ -194,12 +197,13 @@ func (role *RoleController) Update(ctx *gin.Context) {
 			exception.ValidateException(ctx, errors, role.env)
 			return
 		}
-		log.Println(input)
+		log.Debug().Interface("input", input).Msg("RoleController.Update")
 		e := role.env.GetDB().Model(r).Update("name", input.Name)
-		log.Println(e.Error)
+		log.Debug().Err(e.Error).Msg("RoleController.Update")
 	}
 
-	log.Println("input.PermissionIds", input.PermissionIds)
+	log.Debug().Interface("input.PermissionIds", input.PermissionIds).Msg("RoleController.Update")
+
 	if input.PermissionIds != nil {
 		ps := models.Permission{}.FindByIds(input.PermissionIds, role.env)
 		role.env.GetDB().Model(r).Association("Permissions").Clear()
@@ -212,7 +216,7 @@ func (role *RoleController) Update(ctx *gin.Context) {
 func (role *RoleController) Destroy(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("role"))
 	if err != nil {
-		log.Panicln("RoleController Destroy err: ", err)
+		log.Panic().Err(err).Msg("RoleController Destroy err: ")
 		return
 	}
 

@@ -2,8 +2,8 @@ package authcontroller
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"
@@ -76,7 +76,7 @@ func (auth *authController) Info(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(*models.User)
 	if err := auth.env.GetDB().Preload("Roles.Permissions").Find(&user).Error; err != nil {
-		log.Panicln(err)
+		log.Fatal().Err(err).Msg("authController.Info")
 		return
 	}
 	if !user.TokenExpired(auth.env) {
