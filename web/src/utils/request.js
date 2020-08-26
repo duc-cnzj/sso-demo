@@ -1,7 +1,8 @@
 import axios from 'axios'
-import { MessageBox, Message } from 'element-ui'
+import { Message } from 'element-ui'
 import store from '@/store'
-import { getToken } from '@/utils/auth'
+import router from '../router'
+import { getToken, removeToken } from '@/utils/auth'
 
 // create an axios instance
 const service = axios.create({
@@ -19,7 +20,7 @@ service.interceptors.request.use(
       // let each request carry token
       // ['X-Token'] is a custom headers key
       // please modify it according to the actual situation
-      config.headers['X-Request-Token'] = getToken()
+      config.headers['Authorization'] = getToken()
     }
     return config
   },
@@ -63,12 +64,13 @@ service.interceptors.response.use(
         }
       }
     }
-    // console.log('err' + error) // for debug
-    // Message({
-    //   message: error.message,
-    //   type: 'error',
-    //   duration: 5 * 1000
-    // })
+
+    if (error.response.status === 401) {
+      removeToken()
+      Message.error('登陆过期，请重新登陆')
+      router.push({ name: 'login' })
+    }
+
     return Promise.reject(error)
   }
 )

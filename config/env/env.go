@@ -25,6 +25,10 @@ type Config struct {
 	RedisPassword string
 	RedisPort     uint
 	Debug         bool
+
+	// jwt
+	JwtSecret         string
+	JwtExpiresSeconds int64
 }
 
 type Env struct {

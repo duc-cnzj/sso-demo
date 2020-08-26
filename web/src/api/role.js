@@ -4,7 +4,7 @@ export const index = (params) => {
   console.log(params)
   return request({
     method: 'get',
-    url: '/api/roles',
+    url: '/api/admin/roles',
     params
   })
 }
@@ -12,7 +12,7 @@ export const index = (params) => {
 export const store = (data) => {
   return request({
     method: 'post',
-    url: `/api/roles`,
+    url: `/api/admin/roles`,
     data
   })
 }
@@ -20,14 +20,14 @@ export const store = (data) => {
 export const show = (id) => {
   return request({
     method: 'get',
-    url: `/api/roles/${id}`
+    url: `/api/admin/roles/${id}`
   })
 }
 
 export const update = (id, data) => {
   return request({
     method: 'put',
-    url: `/api/roles/${id}`,
+    url: `/api/admin/roles/${id}`,
     data
   })
 }
@@ -35,13 +35,13 @@ export const update = (id, data) => {
 export const destroy = (id) => {
   return request({
     method: 'delete',
-    url: `/api/roles/${id}`
+    url: `/api/admin/roles/${id}`
   })
 }
 
 export const allRoles = (id) => {
   return request({
     method: 'get',
-    url: `/api/all_roles`
+    url: `/api/admin/all_roles`
   })
 }

@@ -3,10 +3,8 @@ package authcontroller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/crypto/bcrypt"
 	"sso/app/models"
 	"sso/config/env"
-	"sso/utils/exception"
 )
 
 type LoginForm struct {
@@ -25,40 +23,6 @@ type authController struct {
 type LoginFormVal struct {
 	RedirectUrl string
 	Errors      []string
-}
-
-func (auth *authController) Login(ctx *gin.Context) {
-	var loginForm LoginForm
-
-	if err := ctx.ShouldBind(&loginForm); err != nil {
-		exception.ValidateException(ctx, err, auth.env)
-
-		return
-	}
-
-	user := models.User{}.FindByEmail(loginForm.UserName, auth.env)
-	printErrorBack := func() {
-		ctx.JSON(401, gin.H{"code": 401, "msg": "Unauthorized!"})
-	}
-
-	if user == nil {
-		printErrorBack()
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginForm.Password)); err != nil {
-		printErrorBack()
-		return
-	}
-
-	user.UpdateLastLoginAt(auth.env)
-
-	token := user.GenerateApiToken(auth.env, false)
-
-	ctx.JSON(200, gin.H{"code": 200, "data": gin.H{
-		"token":    token,
-		"lifetime": auth.env.Config().AccessTokenLifetime,
-	}})
 }
 
 func (auth *authController) Logout(c *gin.Context) {

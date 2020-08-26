@@ -1,9 +1,9 @@
 import router from './router'
 import store from './store'
-// import { Message } from 'element-ui'
+import { Message } from 'element-ui'
 import NProgress from 'nprogress' // progress bar
 import 'nprogress/nprogress.css' // progress bar style
-import { getToken } from '@/utils/auth' // get token from cookie
+import { getToken, removeToken } from '@/utils/auth' // get token from cookie
 import getPageTitle from '@/utils/get-page-title'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
@@ -39,7 +39,8 @@ router.beforeEach(async(to, from, next) => {
         } catch (error) {
           // remove token and go to login page to re-login
           // await store.dispatch('user/resetToken')
-          Message.error("登陆过期，请重新登陆")
+          removeToken()
+          Message.error('登陆过期，请重新登陆')
           next(`/login?redirect=${to.path}`)
           NProgress.done()
         }

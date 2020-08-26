@@ -44,7 +44,9 @@ func Init(configPath string, rootPath string) *env.Env {
 			RedisPassword:       %s,
 			RedisPort:           %d,
 			SessionLifetime:     %d,
-			AccessTokenLifetime: %d
+			AccessTokenLifetime: %d,
+			JwtSecret: 		     %s,
+			JwtExpiresSeconds:        %d,
 `,
 			config.AppPort,
 			config.Debug,
@@ -59,6 +61,8 @@ func Init(configPath string, rootPath string) *env.Env {
 			config.RedisPort,
 			config.SessionLifetime,
 			config.AccessTokenLifetime,
+			config.JwtSecret,
+			config.JwtExpiresSeconds,
 		)
 	}
 
@@ -108,6 +112,8 @@ func ReadConfig(configPath string) (env.Config, error) {
 		RedisPort:           viper.GetUint("REDIS_PORT"),
 		SessionLifetime:     viper.GetInt("SESSION_LIFETIME"),
 		AccessTokenLifetime: viper.GetInt("ACCESS_TOKEN_LIFETIME"),
+		JwtSecret:           viper.GetString("JWT_SECRET"),
+		JwtExpiresSeconds:   viper.GetInt64("JWT_EXPIRES_AT"),
 	}
 
 	return config, nil

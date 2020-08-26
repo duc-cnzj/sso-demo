@@ -3,7 +3,7 @@ import request from '@/utils/request'
 export const index = (params) => {
   return request({
     method: 'get',
-    url: '/api/users',
+    url: '/api/admin/users',
     params: params
   })
 }
@@ -11,7 +11,7 @@ export const index = (params) => {
 export const store = (data) => {
   return request({
     method: 'post',
-    url: `/api/users`,
+    url: `/api/admin/users`,
     data
   })
 }
@@ -19,14 +19,14 @@ export const store = (data) => {
 export const show = (id) => {
   return request({
     method: 'get',
-    url: `/api/users/${id}`
+    url: `/api/admin/users/${id}`
   })
 }
 
 export const update = (id, data) => {
   return request({
     method: 'put',
-    url: `/api/users/${id}`,
+    url: `/api/admin/users/${id}`,
     data
   })
 }
@@ -34,14 +34,14 @@ export const update = (id, data) => {
 export const destroy = (id) => {
   return request({
     method: 'delete',
-    url: `/api/users/${id}`
+    url: `/api/admin/users/${id}`
   })
 }
 
 export const syncRoles = (id, data) => {
   return request({
     method: 'post',
-    url: `/api/users/${id}/sync_roles`,
+    url: `/api/admin/users/${id}/sync_roles`,
     data
   })
 }
@@ -49,7 +49,7 @@ export const syncRoles = (id, data) => {
 export const forceLogout = (id) => {
   return request({
     method: 'post',
-    url: `/api/users/${id}/force_logout`
+    url: `/api/admin/users/${id}/force_logout`
   })
 }
 

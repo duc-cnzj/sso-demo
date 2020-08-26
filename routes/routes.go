@@ -5,20 +5,22 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	authcontroller2 "sso/app/http/controllers/api/authcontroller"
-	"sso/app/http/controllers/api/permissioncontroller"
-	"sso/app/http/controllers/api/rolecontroller"
-	"sso/app/http/controllers/api/usercontroller"
-	"sso/app/http/controllers/authcontroller"
-	auth2 "sso/app/http/middlewares/auth"
+	adminAuth "sso/app/http/controllers/api/admin/authcontroller"
+	"sso/app/http/controllers/api/admin/permissioncontroller"
+	"sso/app/http/controllers/api/admin/rolecontroller"
+	"sso/app/http/controllers/api/admin/usercontroller"
+	apiWebAuth "sso/app/http/controllers/api/web/authcontroller"
+	webAuth "sso/app/http/controllers/web/authcontroller"
+	webAuthMiddleware "sso/app/http/middlewares/auth"
 	"sso/app/http/middlewares/i18n"
+	"sso/app/http/middlewares/jwt"
 	"sso/config/env"
 )
 
 func Init(router *gin.Engine, env *env.Env) {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AddAllowHeaders("X-Request-Token")
+	config.AddAllowHeaders("X-Request-Token", "Authorization")
 	router.Use(cors.New(config))
 	router.Use(sessions.Sessions("sso", env.SessionStore()), i18n.I18nMiddleware(env))
 
@@ -42,15 +44,15 @@ func Init(router *gin.Engine, env *env.Env) {
 		ctx.JSON(200, gin.H{"success": true})
 	})
 
-	auth := authcontroller.New(env)
+	auth := webAuth.New(env)
 
-	guest := router.Group("/", auth2.GuestMiddleware(env))
+	guest := router.Group("/", webAuthMiddleware.GuestMiddleware(env))
 	{
 		guest.GET("/login", auth.LoginForm)
 		guest.POST("/login", auth.Login)
 	}
 
-	authRouter := router.Group("/", auth2.SessionMiddleware(env))
+	authRouter := router.Group("/", webAuthMiddleware.SessionMiddleware(env))
 	{
 		authRouter.GET("/", auth.SelectSystem)
 		authRouter.POST("/auth/logout", auth.Logout)
@@ -58,12 +60,19 @@ func Init(router *gin.Engine, env *env.Env) {
 
 	router.POST("/access_token", auth.AccessToken)
 
-	apiGroup := router.Group("/api")
+	webApiGroup := router.Group("/api", webAuthMiddleware.ApiMiddleware(env))
 	{
-		apiAuth := authcontroller2.New(env)
-		apiGroup.POST("/login", apiAuth.Login)
+		webApiAuth := apiWebAuth.New(env)
+		webApiGroup.POST("/user/info", webApiAuth.Info)
+		webApiGroup.POST("/logout", webApiAuth.Logout)
+	}
 
-		api := apiGroup.Group("/", auth2.ApiMiddleware(env))
+	adminGroup := router.Group("/api/admin")
+	{
+		apiAuth := adminAuth.New(env)
+		adminGroup.POST("/login", apiAuth.Login)
+
+		api := adminGroup.Group("/", jwt.AuthMiddleware(env))
 		api.POST("/user/info", apiAuth.Info)
 		api.POST("/logout", apiAuth.Logout)
 

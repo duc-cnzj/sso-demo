@@ -4,7 +4,7 @@ export const login = (params) => {
   const { username: email, password } = params
 
   return request({
-    url: '/api/login',
+    url: '/api/admin/login',
     method: 'post',
     data: {
       email: email,
@@ -15,14 +15,14 @@ export const login = (params) => {
 
 export const logout = () => {
   return request({
-    url: '/api/logout',
+    url: '/api/admin/logout',
     method: 'post'
   })
 }
 
 export const userInfo = () => {
   return request({
-    url: '/api/user/info',
+    url: '/api/admin/user/info',
     method: 'post'
   })
 }

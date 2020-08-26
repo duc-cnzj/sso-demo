@@ -86,7 +86,6 @@ const actions = {
         commit('SET_AVATAR', avatar)
         resolve(data)
       }).catch(error => {
-        removeToken() // must remove  token  first
         resetRouter()
         commit('RESET_STATE')
         reject(error)
