@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"io"
@@ -121,7 +122,7 @@ func TestLogin(t *testing.T) {
 	config.GetDB().Create(&models.User{
 		UserName: "jack",
 		Email:    "jack@qq.com",
-		Password: string(pwd),
+		Password: pwd,
 	})
 
 	for _, tt := range data {
