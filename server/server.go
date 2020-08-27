@@ -27,6 +27,7 @@ func Init(configPath string, rootPath string) *env.Env {
 	)
 
 	if config, err = ReadConfig(configPath); err != nil {
+		log.Println(err)
 		return nil
 	}
 
@@ -100,6 +101,7 @@ func ReadConfig(configPath string) (env.Config, error) {
 
 	config := env.Config{
 		AppPort:             viper.GetUint("APP_PORT"),
+		AppEnv:              viper.GetString("APP_ENV"),
 		Debug:               viper.GetBool("DEBUG"),
 		DBConnection:        viper.GetString("DB_CONNECTION"),
 		DBHost:              viper.GetString("DB_HOST"),

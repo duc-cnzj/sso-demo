@@ -1,6 +1,8 @@
 package main
 
-import "sso/cmd"
+import (
+	"sso/cmd"
+)
 
 func main() {
 	cmd.Execute()

@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	AppEnv              string
 	AppPort             uint
 	SessionLifetime     int
 	AccessTokenLifetime int
@@ -40,6 +41,10 @@ type Env struct {
 	rootDir      string
 }
 
+func (e *Env) SetDb(db *gorm.DB) {
+	e.db = db
+}
+
 func (e *Env) IsDebugging() bool {
 	return e.config.Debug
 }
@@ -50,6 +55,18 @@ func (e *Env) Config() Config {
 
 func (e *Env) RedisPool() *redis.Pool {
 	return e.redisPool
+}
+
+func (e *Env) IsProduction() bool {
+	return e.Config().AppEnv == "production"
+}
+
+func (e *Env) IsLocal() bool {
+	return e.Config().AppEnv == "local"
+}
+
+func (e *Env) IsTesting() bool {
+	return e.Config().AppEnv == "testing"
 }
 
 func (e *Env) SessionStore() sessions.Store {

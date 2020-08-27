@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/crypto/bcrypt"
 	"math"
 
 	"sso/app/models"
@@ -127,7 +126,7 @@ func (user *UserController) Store(ctx *gin.Context) {
 		return
 	}
 
-	password, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	password, err := models.User{}.GeneratePwd(input.Password)
 	if err != nil {
 		log.Panic().Err(err).Msg("UserController.GenerateFromPassword")
 		return

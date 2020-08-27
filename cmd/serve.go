@@ -38,7 +38,7 @@ var serveCmd = &cobra.Command{
 		gin.SetMode(gin.ReleaseMode)
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
-		if serverEnv.IsDebugging() {
+		if !serverEnv.IsProduction() {
 			gin.SetMode(gin.DebugMode)
 			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 			zerolog.SetGlobalLevel(zerolog.DebugLevel)
@@ -46,8 +46,11 @@ var serveCmd = &cobra.Command{
 		}
 
 		r := gin.New()
-		r.Use(gin.Recovery())
 		//r := gin.Default()
+
+		gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
+			log.Debug().Msgf("route:%10s\t%v", httpMethod, absolutePath)
+		}
 
 		routes.Init(r, serverEnv)
 

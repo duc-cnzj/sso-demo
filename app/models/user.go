@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/crypto/bcrypt"
 	"sso/config/env"
 	"sso/utils/helper"
 	"time"
@@ -196,6 +197,10 @@ func (user *User) SyncPermissions(permissions []interface{}, env *env.Env) error
 func (user *User) ForceLogout(env *env.Env) {
 	user.GenerateApiToken(env, true)
 	user.GenerateLogoutToken(env)
+}
+
+func (user User) GeneratePwd(pwd string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 }
 
 func toRoleInterfaceSlice(slice interface{}) []interface{} {
