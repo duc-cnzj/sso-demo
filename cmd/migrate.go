@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"github.com/jinzhu/gorm"
 	"log"
 	"sso/app/models"
-	"sso/config/env"
 	"sso/server"
 
 	"github.com/spf13/cobra"
@@ -21,18 +19,13 @@ var migrateCmd = &cobra.Command{
 	Short: "数据库迁移",
 	Run: func(cmd *cobra.Command, args []string) {
 		var (
-			err    error
-			config env.Config
-			conn   *gorm.DB
+			err error
+			s   = &server.Server{}
 		)
-		if config, err = server.ReadConfig(envPath); err != nil {
-			log.Panicln(err)
+		if err = s.Init(envPath, ""); err != nil {
+			return
 		}
-		conn, err = server.DB(config)
-		if err != nil {
-			log.Fatal(err)
-		}
-		migrate := conn.AutoMigrate(migrateModels...)
+		migrate := s.Env().GetDB().AutoMigrate(migrateModels...)
 		if migrate.Error != nil {
 			log.Fatal("migrate.Error", migrate.Error.Error())
 		}

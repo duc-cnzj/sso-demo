@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"sso/app/http/middlewares/jwt"
-	"sso/config/env"
 	"sso/repositories/user_repository"
 	"sso/server"
 
@@ -17,15 +16,14 @@ var genJwtCmd = &cobra.Command{
 	Short: "生成 jwt token.",
 	Run: func(cmd *cobra.Command, args []string) {
 		var (
-			err    error
-			config env.Config
+			err error
+			s   = &server.Server{}
 		)
-		if config, err = server.ReadConfig(envPath); err != nil {
+
+		if err = s.Init(envPath, ""); err != nil {
 			return
 		}
-		db, _ := server.DB(config)
-
-		env := env.NewEnv(config, db, nil, nil)
+		env := s.Env()
 		userRepo := user_repository.NewUserRepository(env)
 		u, _ := userRepo.FindById(id)
 		token, _ := jwt.GenerateToken(u, env)

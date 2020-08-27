@@ -2,11 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"os"
-	"sso/routes"
 	"sso/server"
 	"sso/utils/interrupt"
 	"strings"
@@ -15,6 +11,7 @@ import (
 )
 
 var rootPath string
+var ser = &server.Server{}
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
@@ -32,33 +29,16 @@ var serveCmd = &cobra.Command{
 		ctx, done := interrupt.Context()
 		defer done()
 
-		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-		serverEnv := server.Init(envPath, rootPath)
-
-		gin.SetMode(gin.ReleaseMode)
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
-
-		if !serverEnv.IsProduction() {
-			gin.SetMode(gin.DebugMode)
-			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-			zerolog.SetGlobalLevel(zerolog.DebugLevel)
-			log.Info().Msg("############### debug mode ###############")
+		if err := ser.Init(envPath, rootPath); err != nil {
+			log.Fatal().Err(err).Msg("ser.Init")
 		}
-
-		r := gin.New()
-		//r := gin.Default()
-
-		gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
-			log.Debug().Msgf("route:%10s\t%v", httpMethod, absolutePath)
-		}
-
-		routes.Init(r, serverEnv)
 
 		go func() {
-			log.Fatal().Err(r.Run(fmt.Sprintf(":%d", serverEnv.Config().AppPort))).Msg("server run error")
+			log.Fatal().Err(ser.Run()).Msg("server run error")
 		}()
 
 		<-ctx.Done()
+		ser.Shutdown()
 		log.Info().Msg("server done by " + ctx.Err().Error())
 	},
 }

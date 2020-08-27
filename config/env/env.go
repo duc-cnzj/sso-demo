@@ -5,6 +5,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
+	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
@@ -37,11 +38,11 @@ type Env struct {
 	db           *gorm.DB
 	sessionStore sessions.Store
 	redisPool    *redis.Pool
-	config       Config
+	config       *Config
 	rootDir      string
 }
 
-func (e *Env) SetDb(db *gorm.DB) {
+func (e *Env) SetDB(db *gorm.DB) {
 	e.db = db
 }
 
@@ -49,7 +50,7 @@ func (e *Env) IsDebugging() bool {
 	return e.config.Debug
 }
 
-func (e *Env) Config() Config {
+func (e *Env) Config() *Config {
 	return e.config
 }
 
@@ -75,7 +76,7 @@ func (e *Env) SessionStore() sessions.Store {
 
 type Operator func(*Env)
 
-func NewEnv(config Config, db *gorm.DB, sessionStore sessions.Store, pool *redis.Pool, envOperators ...Operator) *Env {
+func NewEnv(config *Config, db *gorm.DB, sessionStore sessions.Store, pool *redis.Pool, envOperators ...Operator) *Env {
 	env := &Env{
 		db:           db,
 		sessionStore: sessionStore,
@@ -123,4 +124,22 @@ func (e *Env) DBTransaction(fn func(tx *gorm.DB) error) error {
 
 func (e *Env) RootDir() string {
 	return e.rootDir
+}
+
+func (e *Env) PrintConfig() {
+	log.Debug().Msgf("%20s: %v", "AppPort", e.config.AppPort)
+	log.Debug().Msgf("%20s: %v", "Debug", e.config.Debug)
+	log.Debug().Msgf("%20s: %v", "DBConnection", e.config.DBConnection)
+	log.Debug().Msgf("%20s: %v", "DBHost", e.config.DBHost)
+	log.Debug().Msgf("%20s: %v", "DBPort", e.config.DBPort)
+	log.Debug().Msgf("%20s: %v", "DBDatabase", e.config.DBDatabase)
+	log.Debug().Msgf("%20s: %v", "DBUsername", e.config.DBUsername)
+	log.Debug().Msgf("%20s: %v", "DBPassword", e.config.DBPassword)
+	log.Debug().Msgf("%20s: %v", "RedisHost", e.config.RedisHost)
+	log.Debug().Msgf("%20s: %v", "RedisPassword", e.config.RedisPassword)
+	log.Debug().Msgf("%20s: %v", "RedisPort", e.config.RedisPort)
+	log.Debug().Msgf("%20s: %v", "SessionLifetime", e.config.SessionLifetime)
+	log.Debug().Msgf("%20s: %v", "AccessTokenLifetime", e.config.AccessTokenLifetime)
+	log.Debug().Msgf("%20s: %v", "JwtSecret", e.config.JwtSecret)
+	log.Debug().Msgf("%20s: %v", "JwtExpiresSeconds", e.config.JwtExpiresSeconds)
 }

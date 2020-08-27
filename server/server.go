@@ -5,87 +5,186 @@ import (
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	_ "github.com/go-sql-driver/mysql"
 	redis2 "github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"log"
+	"os"
+	"sso/routes"
+
 	"path"
 	"sso/app/models"
 	"sso/config/env"
 	"time"
 )
 
-func Init(configPath string, rootPath string) *env.Env {
-	var (
-		config env.Config
-		err    error
-		db     *gorm.DB
-	)
+type Server struct {
+	env     *env.Env
+	config  *env.Config
+	db      *gorm.DB
+	redis   *redis2.Pool
+	session sessions.Store
+	engine  *gin.Engine
+}
 
-	if config, err = ReadConfig(configPath); err != nil {
-		log.Println(err)
-		return nil
+func (s *Server) Engine() *gin.Engine {
+	return s.engine
+}
+
+func (s *Server) Config() *env.Config {
+	return s.config
+}
+
+func (s *Server) Env() *env.Env {
+	return s.env
+}
+
+func (s *Server) Init(configPath, rootPath string) error {
+	if err := s.LoadConfig(configPath); err != nil {
+		return err
 	}
 
-	if config.Debug {
-		fmt.Printf(`
-			AppPort:             %d,
-			Debug:               %t,
-			DBConnection:        %s,
-			DBHost:              %s,
-			DBPort:              %d,
-			DBDatabase:          %s,
-			DBUsername:          %s,
-			DBPassword:          %s,
-			RedisHost:           %s,
-			RedisPassword:       %s,
-			RedisPort:           %d,
-			SessionLifetime:     %d,
-			AccessTokenLifetime: %d,
-			JwtSecret: 		     %s,
-			JwtExpiresSeconds:        %d,
-`,
-			config.AppPort,
-			config.Debug,
-			config.DBConnection,
-			config.DBHost,
-			config.DBPort,
-			config.DBDatabase,
-			config.DBUsername,
-			config.DBPassword,
-			config.RedisHost,
-			config.RedisPassword,
-			config.RedisPort,
-			config.SessionLifetime,
-			config.AccessTokenLifetime,
-			config.JwtSecret,
-			config.JwtExpiresSeconds,
-		)
+	if err := s.InitDB(); err != nil {
+		return err
+	}
+
+	s.InitRedis()
+
+	if err := s.InitSession(); err != nil {
+		return err
 	}
 
 	zhLang := zh.New()
 	enLang := en.New()
 	uni := ut.New(enLang, zhLang, enLang)
 
-	if db, err = DB(config); err != nil {
-		log.Panicln(err)
-	}
+	s.env = env.NewEnv(
+		s.config,
+		s.db,
+		s.session,
+		s.redis,
+		env.WithUniversalTranslator(uni),
+		env.WithRootDir(rootPath),
+	)
 
-	password := config.RedisPassword
-	redisPool := redisPool(config, password)
-
-	store := sessionStore(redisPool, config)
-	serverEnv := env.NewEnv(config, db, store, redisPool, env.WithUniversalTranslator(uni), env.WithRootDir(rootPath))
 	gob.Register(&models.User{})
 
-	return serverEnv
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+	if s.env.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+
+	if s.env.IsDebugging() {
+		gin.SetMode(gin.DebugMode)
+		gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
+			log.Debug().Msgf("route:%10s\t%v", httpMethod, absolutePath)
+		}
+
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		log.Info().Msg("############### debug mode ###############")
+		s.env.PrintConfig()
+		s.db.LogMode(true)
+	}
+
+	r := gin.New()
+
+	s.engine = routes.Init(r, s.env)
+
+	return nil
 }
 
-func ReadConfig(configPath string) (env.Config, error) {
+func (s *Server) Run() error {
+	return s.engine.Run(fmt.Sprintf(":%d", s.config.AppPort))
+}
+
+func (s *Server) Shutdown() {
+
+}
+
+func (s *Server) LoadConfig(configPath string) error {
+	var (
+		config *env.Config
+		err    error
+	)
+	if config, err = ReadConfig(configPath); err != nil {
+		return err
+	}
+	s.config = config
+
+	return nil
+}
+
+func (s *Server) InitDB() error {
+	var err error
+	s.db, err = gorm.Open(s.config.DBConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", s.config.DBUsername, s.config.DBPassword, s.config.DBHost, s.config.DBPort, s.config.DBDatabase))
+	if err != nil {
+		return err
+	}
+	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
+	s.db.DB().SetMaxIdleConns(10)
+	// SetMaxOpenCons 设置数据库的最大连接数量。
+	s.db.DB().SetMaxOpenConns(100)
+	// SetConnMaxLifetiment 设置连接的最大可复用时间。
+	s.db.DB().SetConnMaxLifetime(time.Hour)
+
+	return nil
+}
+
+func (s *Server) InitRedis() {
+	s.redis = &redis2.Pool{
+		MaxIdle:     10,
+		IdleTimeout: 240 * time.Second,
+		TestOnBorrow: func(c redis2.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+		Dial: func() (redis2.Conn, error) {
+			c, err := redis2.Dial("tcp", fmt.Sprintf("%s:%d", s.config.RedisHost, s.config.RedisPort))
+
+			if err != nil {
+				return nil, err
+			}
+
+			if s.config.RedisPassword != "" {
+				if _, err := c.Do("AUTH", s.config.RedisPassword); err != nil {
+					c.Close()
+					return nil, err
+				}
+			}
+
+			return c, err
+		},
+	}
+}
+
+func (s *Server) InitSession() error {
+	var (
+		store redis.Store
+		err   error
+	)
+	if store, err = redis.NewStoreWithPool(s.redis); err != nil {
+		return err
+	}
+
+	store.Options(sessions.Options{
+		Path:   "/",
+		MaxAge: s.config.SessionLifetime,
+	})
+	s.session = store
+
+	return nil
+}
+
+func ReadConfig(configPath string) (*env.Config, error) {
 	var err error
 	if configPath == "" {
 		configPath = ".env"
@@ -96,10 +195,10 @@ func ReadConfig(configPath string) (env.Config, error) {
 	viper.SetConfigFile(configPath)
 
 	if err = viper.ReadInConfig(); err != nil {
-		return env.Config{}, err
+		return &env.Config{}, err
 	}
 
-	config := env.Config{
+	config := &env.Config{
 		AppPort:             viper.GetUint("APP_PORT"),
 		AppEnv:              viper.GetString("APP_ENV"),
 		Debug:               viper.GetBool("DEBUG"),
@@ -119,61 +218,4 @@ func ReadConfig(configPath string) (env.Config, error) {
 	}
 
 	return config, nil
-}
-
-func DB(config env.Config) (*gorm.DB, error) {
-	db, err := gorm.Open(config.DBConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", config.DBUsername, config.DBPassword, config.DBHost, config.DBPort, config.DBDatabase))
-	if err != nil {
-		return db, err
-	}
-	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
-	db.DB().SetMaxIdleConns(10)
-	// SetMaxOpenCons 设置数据库的最大连接数量。
-	db.DB().SetMaxOpenConns(100)
-	// SetConnMaxLifetiment 设置连接的最大可复用时间。
-	db.DB().SetConnMaxLifetime(time.Hour)
-	if config.Debug {
-		db.LogMode(true)
-	}
-	return db, nil
-}
-
-func sessionStore(redisPool *redis2.Pool, config env.Config) redis.Store {
-	store, err := redis.NewStoreWithPool(redisPool, []byte("secret"))
-	if err != nil {
-		log.Panicln(err)
-		return nil
-	}
-	store.Options(sessions.Options{
-		Path:   "/",
-		MaxAge: config.SessionLifetime,
-	})
-	return store
-}
-
-func redisPool(config env.Config, password string) *redis2.Pool {
-	redisPool := &redis2.Pool{
-		MaxIdle:     10,
-		IdleTimeout: 240 * time.Second,
-		TestOnBorrow: func(c redis2.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-		Dial: func() (redis2.Conn, error) {
-			c, err := redis2.Dial("tcp", fmt.Sprintf("%s:%d", config.RedisHost, config.RedisPort))
-			if err != nil {
-				log.Panicln(err)
-				return nil, err
-			}
-			if password != "" {
-				if _, err := c.Do("AUTH", config.RedisPassword); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-
-			return c, err
-		},
-	}
-	return redisPool
 }

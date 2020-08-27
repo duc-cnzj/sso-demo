@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"github.com/jinzhu/gorm"
 	"log"
-	"sso/config/env"
 	"sso/repositories/user_repository"
 	"sso/server"
 
@@ -17,21 +15,16 @@ var forceLogoutCmd = &cobra.Command{
 	Short: "强制用户登出",
 	Run: func(cmd *cobra.Command, args []string) {
 		var (
-			err    error
-			config env.Config
-			db     *gorm.DB
+			err error
+			s   = &server.Server{}
 		)
 
-		if config, err = server.ReadConfig(envPath); err != nil {
-			return
-		}
-
-		if db, err = server.DB(config); err != nil {
+		if err = s.Init(envPath, ""); err != nil {
 			return
 		}
 
 		if userId > 0 {
-			var env = env.NewEnv(config, nil, nil, nil, env.WithDB(db))
+			var env = s.Env()
 			userRepo := user_repository.NewUserRepository(env)
 			user, _ := userRepo.FindById(userId)
 			userRepo.ForceLogout(user)

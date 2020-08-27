@@ -2,17 +2,84 @@ package tests
 
 import (
 	"github.com/gin-gonic/gin"
-	"sso/config/env"
-	"sso/routes"
+	"github.com/jinzhu/gorm"
+	"github.com/rs/zerolog"
+	"log"
+	"os"
+	"sso/app/http/controllers/api"
+	"sso/app/http/middlewares/jwt"
+	"sso/app/models"
 	"sso/server"
 )
 
-func InitRouter(env *env.Env) *gin.Engine {
-	r := gin.New()
+var (
+	repos *api.AllRepo
+	s     *server.Server
+)
 
-	return routes.Init(r, env)
+func NewTestServer(path string) (*server.Server, error) {
+	var s = &server.Server{}
+	if err := s.Init(path, ""); err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
-func NewTestEnv(path string) *env.Env {
-	return server.Init(path, "")
+func MainHelper() (*server.Server, *api.AllRepo) {
+	var (
+		pwd string
+		err error
+	)
+	if pwd, err = os.Getwd(); err != nil {
+		log.Fatal(err)
+	}
+
+	zerolog.SetGlobalLevel(zerolog.Disabled)
+	gin.SetMode(gin.ReleaseMode)
+	s, err = NewTestServer(pwd + "/../../.env")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	repos = api.NewAllRepo(s.Env())
+	return s, repos
+}
+
+func WarpTransaction(s *server.Server, fn func()) {
+	db := s.Env().GetDB()
+	s.Env().DBTransaction(func(tx *gorm.DB) error {
+		s.Env().SetDB(tx)
+		fn()
+		tx.Rollback()
+		return nil
+	})
+	s.Env().SetDB(db)
+}
+
+func NewUserWithToken(user *models.User) (*models.User, string) {
+	u := NewUser(user)
+
+	generateToken, _ := jwt.GenerateToken(u, s.Env())
+
+	return u, generateToken
+}
+
+func NewUser(user *models.User) *models.User {
+	pwd, _ := repos.UserRepo.GeneratePwd("12345")
+	var u *models.User
+	if user != nil {
+		u = user
+	} else {
+		u = &models.User{
+			UserName: "duc",
+			Email:    "duc@duc.com",
+			Password: pwd,
+		}
+	}
+	if err := repos.UserRepo.Create(u); err != nil {
+		return nil
+	}
+
+	return u
 }

@@ -70,12 +70,6 @@ func (auth *authController) Login(ctx *gin.Context) {
 
 func (auth *authController) Logout(c *gin.Context) {
 	jwt.AddToBlacklist(auth.env.Config().JwtExpiresSeconds, jwt.GetBearerToken(c), auth.env)
-	//u, exists := c.Get("user")
-	//if exists {
-	//user := u.(*models.User)
-	// 让用户的api调用不能再使用
-	//user.GenerateApiToken(auth.env, true)
-	//}
 
 	c.JSON(204, nil)
 }
