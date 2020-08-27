@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"math"
+	"sso/app/http/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"
@@ -33,10 +34,11 @@ type RoleUpdateInput struct {
 
 type RoleController struct {
 	env *env.Env
+	*api.AllRepo
 }
 
 func NewRoleController(env *env.Env) *RoleController {
-	return &RoleController{env: env}
+	return &RoleController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 func (role *RoleController) Index(ctx *gin.Context) {
@@ -104,7 +106,7 @@ func (role *RoleController) Store(ctx *gin.Context) {
 		return
 	}
 
-	name := models.Role{}.FindByName(input.Name, role.env)
+	name, _ := role.RoleRepo.FindByName(input.Name)
 	if name != nil {
 		var errors = form.ValidateErrors{
 			form.ValidateError{
@@ -126,7 +128,7 @@ func (role *RoleController) Store(ctx *gin.Context) {
 		}
 
 		if input.PermissionIds != nil {
-			permissionByIds := models.Permission{}.FindByIds(input.PermissionIds, role.env)
+			permissionByIds, _ := role.PermRepo.FindByIds(input.PermissionIds)
 			if err := tx.Model(r).Association("Permissions").Clear().Error; err != nil {
 				return err
 			}
@@ -143,7 +145,9 @@ func (role *RoleController) Store(ctx *gin.Context) {
 		log.Panic().Err(e).Msg("RoleController.Store")
 	}
 
-	ctx.JSON(201, gin.H{"code": 201, "data": models.Role{}.FindByIdWithPermissions(r.ID, role.env)})
+	permissions, _ := role.RoleRepo.FindByIdWithPermissions(r.ID)
+
+	ctx.JSON(201, gin.H{"code": 201, "data": permissions})
 }
 
 func (role *RoleController) Show(ctx *gin.Context) {
@@ -154,7 +158,7 @@ func (role *RoleController) Show(ctx *gin.Context) {
 		return
 	}
 
-	r := models.Role{}.FindByIdWithPermissions(uint(id), role.env)
+	r, _ := role.RoleRepo.FindByIdWithPermissions(uint(id))
 	if r == nil {
 		exception.ModelNotFound(ctx, "role")
 		return
@@ -178,14 +182,14 @@ func (role *RoleController) Update(ctx *gin.Context) {
 		return
 	}
 
-	r := models.Role{}.FindById(uint(id), role.env)
+	r, _ := role.RoleRepo.FindById(uint(id))
 	if r == nil {
 		exception.ModelNotFound(ctx, "role")
 		return
 	}
 
 	if input.Name != "" {
-		hasRole := models.Role{}.FindByName(input.Name, role.env)
+		hasRole, _ := role.RoleRepo.FindByName(input.Name)
 
 		if hasRole != nil && hasRole.ID != r.ID {
 			var errors = form.ValidateErrors{
@@ -205,12 +209,13 @@ func (role *RoleController) Update(ctx *gin.Context) {
 	log.Debug().Interface("input.PermissionIds", input.PermissionIds).Msg("RoleController.Update")
 
 	if input.PermissionIds != nil {
-		ps := models.Permission{}.FindByIds(input.PermissionIds, role.env)
+		ps, _ := role.PermRepo.FindByIds(input.PermissionIds)
 		role.env.GetDB().Model(r).Association("Permissions").Clear()
 		role.env.GetDB().Model(r).Association("Permissions").Append(toInterfaceSlice(ps)...)
 	}
 
-	ctx.JSON(200, gin.H{"code": 200, "data": models.Role{}.FindByIdWithPermissions(r.ID, role.env)})
+	permissions, _ := role.RoleRepo.FindByIdWithPermissions(r.ID)
+	ctx.JSON(200, gin.H{"code": 200, "data": permissions})
 }
 
 func (role *RoleController) Destroy(ctx *gin.Context) {
@@ -220,7 +225,7 @@ func (role *RoleController) Destroy(ctx *gin.Context) {
 		return
 	}
 
-	r := models.Role{}.FindById(uint(id), role.env)
+	r, _ := role.RoleRepo.FindById(uint(id))
 	if r == nil {
 		exception.ModelNotFound(ctx, "role")
 		return

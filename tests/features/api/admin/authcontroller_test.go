@@ -14,6 +14,7 @@ import (
 	"os"
 	"sso/app/models"
 	"sso/config/env"
+	"sso/repositories/user_repository"
 	"sso/routes"
 	"sso/tests"
 	"strings"
@@ -114,7 +115,8 @@ func TestLogin(t *testing.T) {
 		},
 	}
 
-	pwd, _ := models.User{}.GeneratePwd("12345")
+	repo := user_repository.NewUserRepository(config)
+	pwd, _ := repo.GeneratePwd("12345")
 
 	config.GetDB().Create(&models.User{
 		UserName: "jack",

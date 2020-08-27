@@ -6,6 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"sso/app/models"
 	"sso/config/env"
+	"sso/repositories/user_repository"
 )
 
 func SessionMiddleware(env *env.Env) gin.HandlerFunc {
@@ -35,12 +36,14 @@ func SessionMiddleware(env *env.Env) gin.HandlerFunc {
 }
 
 func GuestMiddleware(env *env.Env) gin.HandlerFunc {
+	userRepo := user_repository.NewUserRepository(env)
+
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		u, ok := session.Get("user").(*models.User)
 		if ok {
 			if !CheckLogoutTokenIsChanged(u.LogoutToken, u.ID, env) {
-				token := u.GenerateAccessToken(env)
+				token := userRepo.GenerateAccessToken(u)
 				redirectUrl := c.Query("redirect_url")
 				if redirectUrl == "" {
 					c.Redirect(302, "/")
@@ -59,7 +62,9 @@ func GuestMiddleware(env *env.Env) gin.HandlerFunc {
 
 // 如果用户做了登出操作(不管是在sso登出还是在a.com登出)，则都会改变token，导致sso登录过期
 func CheckLogoutTokenIsChanged(sessionLogoutToken string, id uint, env *env.Env) bool {
-	user := models.User{}.FindById(id, env)
+	userRepo := user_repository.NewUserRepository(env)
+
+	user, _ := userRepo.FindById(id)
 	if user == nil {
 		return true
 	}
@@ -76,10 +81,12 @@ func CheckLogoutTokenIsChanged(sessionLogoutToken string, id uint, env *env.Env)
 }
 
 func ApiMiddleware(env *env.Env) gin.HandlerFunc {
+	userRepo := user_repository.NewUserRepository(env)
+
 	return func(c *gin.Context) {
 		token := c.Request.Header.Get("X-Request-Token")
 		if token != "" {
-			user := models.User{}.FindByToken(token, env)
+			user, _ := userRepo.FindByToken(token)
 			if user != nil {
 				c.Set("user", user)
 				c.Next()

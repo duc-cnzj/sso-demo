@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"math"
-
+	"sso/app/http/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"
@@ -41,10 +41,14 @@ type SyncInput struct {
 
 type UserController struct {
 	env *env.Env
+	*api.AllRepo
 }
 
 func NewUserController(env *env.Env) *UserController {
-	return &UserController{env: env}
+	return &UserController{
+		env:     env,
+		AllRepo: api.NewAllRepo(env),
+	}
 }
 
 func (user *UserController) Index(ctx *gin.Context) {
@@ -114,7 +118,8 @@ func (user *UserController) Store(ctx *gin.Context) {
 		return
 	}
 
-	userByEmail := models.User{}.FindByEmail(input.Email, user.env)
+	userByEmail := user.UserRepo.FindByEmail(input.Email)
+
 	if userByEmail != nil {
 		var errors = form.ValidateErrors{
 			form.ValidateError{
@@ -126,38 +131,44 @@ func (user *UserController) Store(ctx *gin.Context) {
 		return
 	}
 
-	password, err := models.User{}.GeneratePwd(input.Password)
+	password, err := user.UserRepo.GeneratePwd(input.Password)
+
 	if err != nil {
 		log.Panic().Err(err).Msg("UserController.GenerateFromPassword")
 		return
 	}
+
 	newUser := &models.User{
 		UserName: input.Email,
 		Email:    input.Email,
-		Password: string(password),
+		Password: password,
 	}
-	res := user.env.GetDB().Create(newUser)
-	if res.Error != nil {
-		log.Panic().Err(res.Error).Msg("UserController.GenerateFromPassword")
+
+	if err := user.UserRepo.Create(newUser); err != nil {
+		log.Panic().Err(err).Msg("UserController.GenerateFromPassword")
 	}
 
 	ctx.JSON(201, gin.H{"code": 201, "data": newUser})
 }
 
 func (user *UserController) Show(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("user"))
-	if err != nil {
+	var (
+		u   *models.User
+		err error
+		id  int
+	)
+
+	if id, err = strconv.Atoi(ctx.Param("user")); err != nil {
 		log.Panic().Err(err).Msg("UserController.Show")
 		return
 	}
 
-	byId := models.User{}.FindById(uint(id), user.env)
-	if byId == nil {
+	if u, _ = user.UserRepo.FindById(uint(id)); u == nil {
 		exception.ModelNotFound(ctx, "user")
 		return
 	}
 
-	ctx.JSON(200, gin.H{"data": byId})
+	ctx.JSON(200, gin.H{"data": u})
 }
 
 func (user *UserController) Update(ctx *gin.Context) {
@@ -174,7 +185,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 		return
 	}
 
-	byId := models.User{}.FindById(uint(id), user.env)
+	byId, _ := user.UserRepo.FindById(uint(id))
 	if byId == nil {
 		exception.ModelNotFound(ctx, "user")
 		return
@@ -182,7 +193,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 
 	var updates = make([]interface{}, 0)
 	if input.Email != "" {
-		byEmail := models.User{}.FindByEmail(input.Email, user.env, "id <> ?", id)
+		byEmail := user.UserRepo.FindByEmail(input.Email, user.env, "id <> ?", id)
 
 		if byEmail != nil && byEmail.ID != uint(id) {
 			var errors = form.ValidateErrors{
@@ -215,7 +226,7 @@ func (user *UserController) Destroy(ctx *gin.Context) {
 		return
 	}
 
-	byId := models.User{}.FindById(uint(id), user.env)
+	byId, _ := user.UserRepo.FindById(uint(id))
 	if byId == nil {
 		exception.ModelNotFound(ctx, "user")
 		return
@@ -248,19 +259,21 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 		log.Debug().Err(err).Msg("UserController.SyncRoles")
 		return
 	}
-	byId := models.User{}.FindById(uint(id), user.env)
+	byId, _ := user.UserRepo.FindById(uint(id))
 	if byId == nil {
 		exception.ModelNotFound(ctx, "user")
 		return
 	}
 
-	userByIds := models.Role{}.FindByIds(input.RoleIds, user.env)
+	roleByIds, err := user.RoleRepo.FindByIds(input.RoleIds)
 
-	if err := byId.SyncRoles(userByIds, user.env); err != nil {
+	if err := user.UserRepo.SyncRoles(byId, roleByIds); err != nil {
 		log.Panic().Err(err).Msg("UserController.SyncRoles")
 	}
 
-	ctx.JSON(200, gin.H{"data": models.User{}.FindWithRoles(id, user.env)})
+	roles, _ := user.UserRepo.FindWithRoles(id)
+
+	ctx.JSON(200, gin.H{"data": roles})
 }
 
 func (user *UserController) ForceLogout(ctx *gin.Context) {
@@ -270,12 +283,12 @@ func (user *UserController) ForceLogout(ctx *gin.Context) {
 		return
 	}
 
-	byId := models.User{}.FindById(uint(id), user.env)
+	byId, _ := user.UserRepo.FindById(uint(id))
 	if byId == nil {
 		exception.ModelNotFound(ctx, "user")
 		return
 	}
 
-	byId.ForceLogout(user.env)
+	user.UserRepo.ForceLogout(byId)
 	ctx.JSON(200, gin.H{"data": true})
 }

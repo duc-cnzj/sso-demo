@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"sso/app/http/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"
@@ -19,11 +20,12 @@ type LoginForm struct {
 }
 
 func New(env *env.Env) *authController {
-	return &authController{env: env}
+	return &authController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 type authController struct {
 	env *env.Env
+	*api.AllRepo
 }
 
 type LoginFormVal struct {
@@ -47,7 +49,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	user := models.User{}.FindByEmail(loginForm.UserName, auth.env)
+	user := auth.UserRepo.FindByEmail(loginForm.UserName, auth.env)
 	printErrorBack := func() {
 		ctx.HTML(200, "login.tmpl", LoginFormVal{
 			RedirectUrl: redirectUrl,
@@ -70,14 +72,14 @@ func (auth *authController) Login(ctx *gin.Context) {
 	err := session.Save()
 	log.Debug().Err(err).Msg("authController.Login")
 
-	user.UpdateLastLoginAt(auth.env)
+	auth.UserRepo.UpdateLastLoginAt(user)
 
 	if loginForm.RedirectUrl == "" {
 		ctx.Redirect(302, "/")
 		return
 	}
 
-	token := user.GenerateAccessToken(auth.env)
+	token := auth.UserRepo.GenerateAccessToken(user)
 
 	ctx.Redirect(302, loginForm.RedirectUrl+"?access_token="+token)
 }
@@ -88,7 +90,7 @@ func (auth *authController) Logout(c *gin.Context) {
 	session.Clear()
 	session.Save()
 	if ok {
-		user.ForceLogout(auth.env)
+		auth.UserRepo.ForceLogout(user)
 	}
 
 	c.Redirect(302, "/login")
@@ -100,7 +102,7 @@ func (auth *authController) SelectSystem(c *gin.Context) {
 	c.HTML(200, "select_system.tmpl", struct {
 		AccessToken string
 	}{
-		AccessToken: user.GenerateAccessToken(auth.env),
+		AccessToken: auth.UserRepo.GenerateAccessToken(user),
 	})
 }
 
@@ -123,11 +125,11 @@ func (auth *authController) AccessToken(c *gin.Context) {
 	id, err := redis.Int(conn.Do("GET", jsonData.AccessToken))
 	log.Debug().Err(err).Interface("id", id).Msg("authController.AccessToken")
 	if err == nil {
-		user := models.User{}.FindById(uint(id), auth.env)
+		user, _ := auth.UserRepo.FindById(uint(id))
 		if user != nil {
 			do, err := conn.Do("DEL", jsonData.AccessToken)
 			log.Debug().Err(err).Interface("do", do).Msg("delete access token")
-			c.JSON(200, gin.H{"api_token": user.GenerateApiToken(auth.env, false), "expire_seconds": auth.env.Config().AccessTokenLifetime})
+			c.JSON(200, gin.H{"api_token": auth.UserRepo.GenerateApiToken(user, false), "expire_seconds": auth.env.Config().AccessTokenLifetime})
 			return
 		}
 	}

@@ -3,6 +3,7 @@ package authcontroller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"sso/app/http/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 )
@@ -13,11 +14,12 @@ type LoginForm struct {
 }
 
 func New(env *env.Env) *authController {
-	return &authController{env: env}
+	return &authController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 type authController struct {
 	env *env.Env
+	*api.AllRepo
 }
 
 type LoginFormVal struct {
@@ -29,7 +31,7 @@ func (auth *authController) Logout(c *gin.Context) {
 	u, exists := c.Get("user")
 	if exists {
 		user := u.(*models.User)
-		user.ForceLogout(auth.env)
+		auth.UserRepo.ForceLogout(user)
 	}
 
 	c.JSON(204, nil)
@@ -42,7 +44,7 @@ func (auth *authController) Info(c *gin.Context) {
 		log.Fatal().Err(err).Msg("authController.Info")
 		return
 	}
-	if !user.TokenExpired(auth.env) {
+	if !auth.UserRepo.TokenExpired(user) {
 		c.JSON(200, gin.H{"data": user})
 		return
 	}

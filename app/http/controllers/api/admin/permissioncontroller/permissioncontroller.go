@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"math"
+	"sso/app/http/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"
@@ -15,6 +16,7 @@ import (
 
 type PermissionController struct {
 	env *env.Env
+	*api.AllRepo
 }
 
 type StoreInput struct {
@@ -37,7 +39,7 @@ type QueryInput struct {
 }
 
 func NewPermissionController(env *env.Env) *PermissionController {
-	return &PermissionController{env: env}
+	return &PermissionController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 func (p *PermissionController) Index(c *gin.Context) {
@@ -109,7 +111,7 @@ func (p *PermissionController) Store(c *gin.Context) {
 		return
 	}
 
-	permission := models.Permission{}.FindByName(input.Name, p.env)
+	permission, _ := p.PermRepo.FindByName(input.Name)
 	if permission != nil {
 		var errors = form.ValidateErrors{
 			form.ValidateError{
@@ -139,7 +141,7 @@ func (p *PermissionController) Show(c *gin.Context) {
 		return
 	}
 
-	r := models.Permission{}.FindById(uint(id), p.env)
+	r, _ := p.PermRepo.FindById(uint(id))
 	if r == nil {
 		exception.ModelNotFound(c, "permission")
 		return
@@ -160,12 +162,12 @@ func (p *PermissionController) Update(c *gin.Context) {
 		log.Debug().Err(err).Msg("PermissionController Update err: ")
 		return
 	}
-	permission := models.Permission{}.FindById(uint(id), p.env)
+	permission, _ := p.PermRepo.FindById(uint(id))
 	if permission == nil {
 		exception.ModelNotFound(c, "Permission")
 		return
 	}
-	hasPermission := models.Role{}.FindByName(input.Name, p.env)
+	hasPermission, _ := p.RoleRepo.FindByName(input.Name)
 	if hasPermission != nil && hasPermission.ID != permission.ID {
 		var errors = form.ValidateErrors{
 			form.ValidateError{
@@ -191,7 +193,7 @@ func (p *PermissionController) Destroy(c *gin.Context) {
 		return
 	}
 
-	r := models.Permission{}.FindById(uint(id), p.env)
+	r, _ := p.PermRepo.FindById(uint(id))
 	if r == nil {
 		exception.ModelNotFound(c, "Permission")
 		return

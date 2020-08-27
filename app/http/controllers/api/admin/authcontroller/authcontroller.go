@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
+	"sso/app/http/controllers/api"
 	"sso/app/http/middlewares/jwt"
 	"sso/app/models"
 	"sso/config/env"
@@ -16,11 +17,12 @@ type LoginForm struct {
 }
 
 func New(env *env.Env) *authController {
-	return &authController{env: env}
+	return &authController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 type authController struct {
 	env *env.Env
+	*api.AllRepo
 }
 
 type LoginFormVal struct {
@@ -37,7 +39,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	user := models.User{}.FindByEmail(loginForm.UserName, auth.env)
+	user := auth.UserRepo.FindByEmail(loginForm.UserName)
 	printErrorBack := func() {
 		ctx.JSON(401, gin.H{"code": 401, "msg": "Unauthorized!"})
 	}
@@ -52,7 +54,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	user.UpdateLastLoginAt(auth.env)
+	auth.UserRepo.UpdateLastLoginAt(user)
 
 	token, err := jwt.GenerateToken(user, auth.env)
 	if err != nil {

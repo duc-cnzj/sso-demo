@@ -3,8 +3,8 @@ package cmd
 import (
 	"github.com/jinzhu/gorm"
 	"log"
-	"sso/app/models"
 	"sso/config/env"
+	"sso/repositories/user_repository"
 	"sso/server"
 
 	"github.com/spf13/cobra"
@@ -32,8 +32,9 @@ var forceLogoutCmd = &cobra.Command{
 
 		if userId > 0 {
 			var env = env.NewEnv(config, nil, nil, nil, env.WithDB(db))
-			user := models.User{}.FindById(userId, env)
-			user.ForceLogout(env)
+			userRepo := user_repository.NewUserRepository(env)
+			user, _ := userRepo.FindById(userId)
+			userRepo.ForceLogout(user)
 			log.Println("success")
 		}
 	},
