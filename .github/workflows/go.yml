@@ -42,4 +42,8 @@ jobs:
       run: go run main.go migrate --env=.env.testing
 
     - name: Test
-      run: go test -v ./...
+      run: |
+          while ! mysqladmin ping -h"127.0.0.1" -P 3306 --silent; do
+            sleep 1
+          done
+          go test -v ./...
