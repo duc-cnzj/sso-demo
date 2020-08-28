@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"math"
-	"sso/app/http/controllers/api"
+	"sso/app/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"sso/app/http/middlewares/jwt"
+	"sso/app/middlewares/jwt"
 	"sso/server"
 
 	"github.com/spf13/cobra"

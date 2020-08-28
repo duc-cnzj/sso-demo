@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"sso/app/http/middlewares/i18n"
+	"sso/app/middlewares/i18n"
 	"sso/config/env"
 	"sso/utils/form"
 )

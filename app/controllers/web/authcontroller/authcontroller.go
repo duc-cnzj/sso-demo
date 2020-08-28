@@ -7,7 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"sso/app/http/controllers/api"
+	"sso/app/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"

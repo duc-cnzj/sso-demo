@@ -3,7 +3,7 @@ package authcontroller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"sso/app/http/controllers/api"
+	"sso/app/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 )

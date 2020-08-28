@@ -47,3 +47,11 @@ func (repo *PermissionRepository) FindByName(name string) (*models.Permission, e
 
 	return permission, nil
 }
+
+func (repo *PermissionRepository) Create(permission *models.Permission) error {
+	if err := repo.env.GetDB().Create(permission).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

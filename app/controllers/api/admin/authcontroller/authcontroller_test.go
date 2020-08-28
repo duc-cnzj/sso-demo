@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"sso/app/http/controllers/api"
-	"sso/app/http/middlewares/jwt"
+	"sso/app/controllers/api"
+	"sso/app/middlewares/jwt"
 	"sso/app/models"
 	"sso/server"
 	"sso/tests"
@@ -26,7 +26,7 @@ var (
 func TestMain(m *testing.M) {
 	pwd, _ := os.Getwd()
 
-	s, repos = tests.MainHelper(pwd + "/../../../../../../.env.testing")
+	s, repos = tests.MainHelper(pwd + "/../../../../../.env.testing")
 
 	os.Exit(m.Run())
 }

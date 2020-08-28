@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"math"
-	"sso/app/http/controllers/api"
+	"sso/app/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/utils/exception"
@@ -51,7 +51,7 @@ func (p *PermissionController) Index(c *gin.Context) {
 		exception.ValidateException(c, err, p.env)
 		return
 	}
-	log.Debug().Interface("", query).Msg("PermissionController.Index.query")
+	log.Info().Interface("query", query).Msg("PermissionController.Index.query")
 
 	var permissions []models.Permission
 	if query.PageSize <= 0 {
@@ -127,8 +127,8 @@ func (p *PermissionController) Store(c *gin.Context) {
 		Name:    input.Name,
 		Project: input.Project,
 	}
-	if err := p.env.GetDB().Create(pnew).Error; err != nil {
-		log.Fatal().Msg(err.Error())
+	if err := p.PermRepo.Create(pnew); err != nil {
+		log.Fatal().Err(err).Msg("")
 	}
 
 	c.JSON(201, gin.H{"code": 201, "data": pnew})
@@ -167,7 +167,7 @@ func (p *PermissionController) Update(c *gin.Context) {
 		exception.ModelNotFound(c, "Permission")
 		return
 	}
-	hasPermission, _ := p.RoleRepo.FindByName(input.Name)
+	hasPermission, _ := p.PermRepo.FindByName(input.Name)
 	if hasPermission != nil && hasPermission.ID != permission.ID {
 		var errors = form.ValidateErrors{
 			form.ValidateError{
