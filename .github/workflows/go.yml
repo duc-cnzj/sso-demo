@@ -39,7 +39,7 @@ jobs:
     - name: Get dependencies
       run: |
         export GO111MODULE=on
-        go mod download
+        go mod tidy -v
 
     - name: migrate
       run: go run main.go migrate --env=.env.testing
