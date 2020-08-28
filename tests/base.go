@@ -5,7 +5,6 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog"
 	"log"
-	"os"
 	"sso/app/http/controllers/api"
 	"sso/app/http/middlewares/jwt"
 	"sso/app/models"
@@ -26,18 +25,14 @@ func NewTestServer(path string) (*server.Server, error) {
 	return s, nil
 }
 
-func MainHelper() (*server.Server, *api.AllRepo) {
+func MainHelper(env string) (*server.Server, *api.AllRepo) {
 	var (
-		pwd string
 		err error
 	)
-	if pwd, err = os.Getwd(); err != nil {
-		log.Fatal(err)
-	}
 
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 	gin.SetMode(gin.ReleaseMode)
-	s, err = NewTestServer(pwd + "/../../.env")
+	s, err = NewTestServer(env)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -46,7 +41,7 @@ func MainHelper() (*server.Server, *api.AllRepo) {
 	return s, repos
 }
 
-func WarpTransaction(s *server.Server, fn func()) {
+func WarpTxRollback(s *server.Server, fn func()) {
 	db := s.Env().GetDB()
 	s.Env().DBTransaction(func(tx *gorm.DB) error {
 		s.Env().SetDB(tx)

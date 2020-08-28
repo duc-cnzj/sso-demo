@@ -1,4 +1,4 @@
-package api_test
+package authcontroller_test
 
 import (
 	"bytes"
@@ -24,12 +24,15 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	s, repos = tests.MainHelper()
+	pwd, _ := os.Getwd()
+
+	s, repos = tests.MainHelper(pwd + "/../../../../../../.env.testing")
+
 	os.Exit(m.Run())
 }
 
 func TestPing(t *testing.T) {
-	tests.WarpTransaction(s, func() {
+	tests.WarpTxRollback(s, func() {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/ping", nil)
 		s.Engine().ServeHTTP(w, req)
@@ -39,7 +42,7 @@ func TestPing(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
-	tests.WarpTransaction(s, func() {
+	tests.WarpTxRollback(s, func() {
 		type LoginForm struct {
 			UserName string `json:"email"`
 			Password string `json:"password"`
@@ -119,7 +122,7 @@ func TestLogin(t *testing.T) {
 }
 
 func TestLogout(t *testing.T) {
-	tests.WarpTransaction(s, func() {
+	tests.WarpTxRollback(s, func() {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/api/admin/logout", nil)
 		s.Engine().ServeHTTP(w, req)
@@ -143,7 +146,7 @@ func TestLogout(t *testing.T) {
 }
 
 func TestInfo(t *testing.T) {
-	tests.WarpTransaction(s, func() {
+	tests.WarpTxRollback(s, func() {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/api/admin/user/info", nil)
 		s.Engine().ServeHTTP(w, req)

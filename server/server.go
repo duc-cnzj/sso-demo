@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
@@ -15,12 +17,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"io/ioutil"
 	"os"
-	"sso/routes"
-
 	"path"
 	"sso/app/models"
 	"sso/config/env"
+	"sso/routes"
 	"time"
 )
 
@@ -184,17 +186,31 @@ func (s *Server) InitSession() error {
 	return nil
 }
 
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
 func ReadConfig(configPath string) (*env.Config, error) {
 	var err error
 	if configPath == "" {
 		configPath = ".env"
 	}
 	if !path.IsAbs(configPath) {
-		viper.AddConfigPath(".")
+		getwd, _ := os.Getwd()
+		configPath = getwd + "/" + configPath
 	}
-	viper.SetConfigFile(configPath)
+	exists := fileExists(configPath)
+	if !exists {
+		return nil, errors.New("file not exists in " + configPath)
+	}
+	viper.SetConfigType("env")
+	file, _ := ioutil.ReadFile(configPath)
 
-	if err = viper.ReadInConfig(); err != nil {
+	if err = viper.ReadConfig(bytes.NewReader(file)); err != nil {
 		return &env.Config{}, err
 	}
 

@@ -128,6 +128,7 @@ func (e *Env) RootDir() string {
 
 func (e *Env) PrintConfig() {
 	log.Debug().Msgf("%20s: %v", "AppPort", e.config.AppPort)
+	log.Debug().Msgf("%20s: %v", "AppEnv", e.config.AppEnv)
 	log.Debug().Msgf("%20s: %v", "Debug", e.config.Debug)
 	log.Debug().Msgf("%20s: %v", "DBConnection", e.config.DBConnection)
 	log.Debug().Msgf("%20s: %v", "DBHost", e.config.DBHost)
