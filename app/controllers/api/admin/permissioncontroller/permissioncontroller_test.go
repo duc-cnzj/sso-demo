@@ -52,11 +52,11 @@ func TestPermissionController_Index(t *testing.T) {
 		})
 
 		data := []struct {
-			name string
+			name  string
 			token string
-			data map[string]string
-			code int
-			res string
+			data  map[string]string
+			code  int
+			res   string
 		}{
 			{
 				name:  "401",
@@ -69,8 +69,8 @@ func TestPermissionController_Index(t *testing.T) {
 				data: map[string]string{
 					"name": "create-update",
 				},
-				code:  200,
-				res: `"total":0`,
+				code: 200,
+				res:  `"total":0`,
 			},
 			{
 				name:  "query project",
@@ -78,21 +78,21 @@ func TestPermissionController_Index(t *testing.T) {
 				data: map[string]string{
 					"project": "sso-with-test",
 				},
-				code:  200,
-				res: `"total":2`,
+				code: 200,
+				res:  `"total":2`,
 			},
 			{
 				name:  "no query",
 				token: token,
 				code:  200,
-				res: "show",
+				res:   "show",
 			},
 		}
 
 		var w *httptest.ResponseRecorder
 		for _, test := range data {
 			t.Run(test.name, func(t *testing.T) {
-				w = tests.GetJson("/api/admin/permissions",  test.data, test.token)
+				w = tests.GetJson("/api/admin/permissions", test.data, test.token)
 				assert.Equal(t, test.code, w.Code)
 				assert.Contains(t, w.Body.String(), test.res)
 				t.Log(w.Body.String())
@@ -106,39 +106,39 @@ func TestPermissionController_Store(t *testing.T) {
 		_, token := tests.NewUserWithToken(nil)
 
 		data := []struct {
-			name string
+			name  string
 			token string
-			data map[string]string
-			code int
-			res string
+			data  map[string]string
+			code  int
+			res   string
 		}{
 			{
 				name:  "401",
 				token: "",
-				data:  map[string]string{
+				data: map[string]string{
 					"name":   "view",
 					"projec": "sso",
 				},
-				code:  401,
+				code: 401,
 			},
 			{
 				name:  "success",
 				token: token,
-				data:  map[string]string{
+				data: map[string]string{
 					"name":   "view",
 					"projec": "sso",
 				},
-				code:  201,
+				code: 201,
 			},
 			{
 				name:  "permission exists",
 				token: token,
-				data:  map[string]string{
+				data: map[string]string{
 					"name":   "view",
 					"projec": "sso",
 				},
-				code:  422,
-				res: "permission exists",
+				code: 422,
+				res:  "permission exists",
 			},
 		}
 
@@ -165,11 +165,11 @@ func TestPermissionController_Show(t *testing.T) {
 		repos.PermRepo.Create(p)
 		id := strconv.Itoa(int(p.ID))
 		data := []struct {
-			name string
+			name  string
 			token string
-			data map[string]string
-			code int
-			res string
+			data  map[string]string
+			code  int
+			res   string
 		}{
 			{
 				name:  "401",
@@ -186,7 +186,7 @@ func TestPermissionController_Show(t *testing.T) {
 		var w *httptest.ResponseRecorder
 		for _, test := range data {
 			t.Run(test.name, func(t *testing.T) {
-				w = tests.GetJson("/api/admin/permissions/" + id , nil, test.token)
+				w = tests.GetJson("/api/admin/permissions/"+id, nil, test.token)
 				assert.Equal(t, test.code, w.Code)
 				assert.Contains(t, w.Body.String(), test.res)
 				t.Log(w.Body.String())
@@ -211,46 +211,46 @@ func TestPermissionController_Update(t *testing.T) {
 		})
 		id := strconv.Itoa(int(p.ID))
 		data := []struct {
-			name string
+			name  string
 			token string
-			data map[string]string
-			code int
-			res string
+			data  map[string]string
+			code  int
+			res   string
 		}{
 			{
 				name:  "401",
 				token: "",
 				data: map[string]string{
-					"name": "create-update",
+					"name":    "create-update",
 					"project": "sso-big",
 				},
-				code:  401,
+				code: 401,
 			},
 			{
 				name:  "success",
 				token: token,
 				data: map[string]string{
-					"name": "create-update",
+					"name":    "create-update",
 					"project": "sso-big",
 				},
-				code:  200,
+				code: 200,
 			},
 			{
 				name:  "success",
 				token: token,
 				data: map[string]string{
-					"name": "show",
+					"name":    "show",
 					"project": "sso-big",
 				},
-				code:  422,
-				res: "name exists",
+				code: 422,
+				res:  "name exists",
 			},
 		}
 
 		var w *httptest.ResponseRecorder
 		for _, test := range data {
 			t.Run(test.name, func(t *testing.T) {
-				w = tests.PutJson("/api/admin/permissions/" + id ,  test.data, test.token)
+				w = tests.PutJson("/api/admin/permissions/"+id, test.data, test.token)
 				assert.Equal(t, test.code, w.Code)
 				assert.Contains(t, w.Body.String(), test.res)
 				t.Log(w.Body.String())
@@ -271,10 +271,10 @@ func TestPermissionController_Destroy(t *testing.T) {
 
 		id := strconv.Itoa(int(p.ID))
 		data := []struct {
-			name string
+			name  string
 			token string
-			code int
-			res string
+			code  int
+			res   string
 		}{
 			{
 				name:  "401",
@@ -291,7 +291,7 @@ func TestPermissionController_Destroy(t *testing.T) {
 		var w *httptest.ResponseRecorder
 		for _, test := range data {
 			t.Run(test.name, func(t *testing.T) {
-				w = tests.DeleteJson("/api/admin/permissions/" + id, test.token)
+				w = tests.DeleteJson("/api/admin/permissions/"+id, test.token)
 				assert.Equal(t, test.code, w.Code)
 				assert.Contains(t, w.Body.String(), test.res)
 				t.Log(w.Body.String())
@@ -315,10 +315,10 @@ func TestPermissionController_GetByGroups(t *testing.T) {
 		})
 
 		data := []struct {
-			name string
+			name  string
 			token string
-			code int
-			res string
+			code  int
+			res   string
 		}{
 			{
 				name:  "401",
@@ -359,10 +359,10 @@ func TestPermissionController_GetPermissionProjects(t *testing.T) {
 		})
 
 		data := []struct {
-			name string
+			name  string
 			token string
-			code int
-			res string
+			code  int
+			res   string
 		}{
 			{
 				name:  "401",
