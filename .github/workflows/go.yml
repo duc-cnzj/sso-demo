@@ -46,7 +46,4 @@ jobs:
 
     - name: Test
       run: |
-          while ! mysqladmin ping -h"localhost" -P 3306 --silent; do
-            sleep 1
-          done
           go test -v ./...
