@@ -10,13 +10,16 @@ import (
 	"sso/config/env"
 	"sso/utils/exception"
 	"sso/utils/form"
-	"strconv"
 	"strings"
 )
 
 type PermissionController struct {
 	env *env.Env
 	*api.AllRepo
+}
+
+type Uri struct {
+	Permission uint `uri:"permission" binding:"required"`
 }
 
 type StoreInput struct {
@@ -135,13 +138,12 @@ func (p *PermissionController) Store(c *gin.Context) {
 }
 
 func (p *PermissionController) Show(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("permission"))
-	if err != nil {
-		log.Panic().Err(err).Msg("PermissionController Show err: ")
+	var uri Uri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		return
 	}
 
-	r, _ := p.PermRepo.FindById(uint(id))
+	r, _ := p.PermRepo.FindById(uri.Permission)
 	if r == nil {
 		exception.ModelNotFound(c, "permission")
 		return
@@ -151,10 +153,11 @@ func (p *PermissionController) Show(c *gin.Context) {
 }
 
 func (p *PermissionController) Update(c *gin.Context) {
-	var input UpdateInput
-	id, err := strconv.Atoi(c.Param("permission"))
-	if err != nil {
-		log.Panic().Err(err).Msg("PermissionController Show err: ")
+	var (
+		input UpdateInput
+		uri Uri
+	)
+	if err := c.ShouldBindUri(&uri); err != nil {
 		return
 	}
 	if err := c.ShouldBind(&input); err != nil {
@@ -162,7 +165,7 @@ func (p *PermissionController) Update(c *gin.Context) {
 		log.Debug().Err(err).Msg("PermissionController Update err: ")
 		return
 	}
-	permission, _ := p.PermRepo.FindById(uint(id))
+	permission, _ := p.PermRepo.FindById(uri.Permission)
 	if permission == nil {
 		exception.ModelNotFound(c, "Permission")
 		return
@@ -187,13 +190,12 @@ func (p *PermissionController) Update(c *gin.Context) {
 }
 
 func (p *PermissionController) Destroy(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("permission"))
-	if err != nil {
-		log.Panic().Err(err).Msg("PermissionController Destroy err: ")
+	var uri Uri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		return
 	}
 
-	r, _ := p.PermRepo.FindById(uint(id))
+	r, _ := p.PermRepo.FindById(uri.Permission)
 	if r == nil {
 		exception.ModelNotFound(c, "Permission")
 		return
