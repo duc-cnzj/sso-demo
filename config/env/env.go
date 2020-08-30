@@ -6,6 +6,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
+	"sync"
 )
 
 type Config struct {
@@ -40,6 +41,7 @@ type Env struct {
 	redisPool    *redis.Pool
 	config       *Config
 	rootDir      string
+	mu           *sync.Mutex
 }
 
 func (e *Env) SetDB(db *gorm.DB) {
@@ -82,6 +84,7 @@ func NewEnv(config *Config, db *gorm.DB, sessionStore sessions.Store, pool *redi
 		sessionStore: sessionStore,
 		redisPool:    pool,
 		config:       config,
+		mu:           &sync.Mutex{},
 	}
 	for _, op := range envOperators {
 		op(env)

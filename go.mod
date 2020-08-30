@@ -15,6 +15,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/jinzhu/gorm v1.9.15
 	github.com/json-iterator/go v1.1.10 // indirect
+	github.com/magiconair/properties v1.8.1
 	github.com/rs/zerolog v1.19.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect

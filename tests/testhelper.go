@@ -13,11 +13,18 @@ import (
 	"sso/app/middlewares/jwt"
 	"sso/app/models"
 	"sso/server"
+	"sync"
 )
 
 var (
 	repos *api.AllRepo
 	s     *server.Server
+	migrateModels = []interface{}{
+		&models.User{},
+		&models.Role{},
+		&models.Permission{},
+	}
+	mu = &sync.Mutex{}
 )
 
 func NewTestServer(path string) (*server.Server, error) {
@@ -42,10 +49,20 @@ func MainHelper(env string) (*server.Server, *api.AllRepo) {
 	}
 
 	repos = api.NewAllRepo(s.Env())
+
+	migrate := s.Env().GetDB().AutoMigrate(migrateModels...)
+	if migrate.Error != nil {
+		log.Fatal("migrate.Error", migrate.Error.Error())
+	}
+
+	log.Println("migrate ok!")
+
 	return s, repos
 }
 
 func WarpTxRollback(s *server.Server, fn func()) {
+	mu.Lock()
+	defer mu.Unlock()
 	db := s.Env().GetDB()
 	s.Env().DBTransaction(func(tx *gorm.DB) error {
 		s.Env().SetDB(tx)
@@ -138,6 +155,22 @@ func DeleteJson(url string, token string) *httptest.ResponseRecorder {
 
 	if token != "" {
 		req.Header.Add("Authorization", token)
+	}
+	s.Engine().ServeHTTP(w, req)
+	return w
+}
+
+
+func WebPostJson(url string, data interface{}, token string) *httptest.ResponseRecorder {
+	body := &bytes.Buffer{}
+	json.NewEncoder(body).Encode(data)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", url, body)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+
+	if token != "" {
+		req.Header.Add("X-Request-Token", token)
 	}
 	s.Engine().ServeHTTP(w, req)
 	return w

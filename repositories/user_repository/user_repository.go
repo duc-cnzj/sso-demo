@@ -22,15 +22,15 @@ func NewUserRepository(env *env.Env) *UserRepository {
 	}
 }
 
-func (repo *UserRepository) FindByEmail(email string, wheres ...interface{}) *models.User {
+func (repo *UserRepository) FindByEmail(email string, wheres ...interface{}) (*models.User, error) {
 	user := &models.User{}
 
 	if err := repo.env.GetDB().Where("email = ?", email).First(user, wheres...).Error; err != nil {
 		log.Debug().Err(err).Msg("findByEmail")
-		return nil
+		return nil, err
 	}
 
-	return user
+	return user, nil
 }
 
 func (repo *UserRepository) GeneratePwd(pwd string) (string, error) {

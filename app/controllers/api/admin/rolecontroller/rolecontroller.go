@@ -122,27 +122,21 @@ func (role *RoleController) Store(ctx *gin.Context) {
 		Name: input.Name,
 	}
 
-	e := role.env.DBTransaction(func(tx *gorm.DB) error {
+	if err := role.env.DBTransaction(func(tx *gorm.DB) error {
 		if err := tx.Create(r).Error; err != nil {
 			return err
 		}
 
-		if input.PermissionIds != nil {
-			permissionByIds, _ := role.PermRepo.FindByIds(input.PermissionIds)
-			if err := tx.Model(r).Association("Permissions").Clear().Error; err != nil {
-				return err
-			}
+		if err := role.RoleRepo.SyncPermissions(r, input.PermissionIds, tx); err != nil {
+			log.Error().Err(err).Msg("RoleController.Store")
 
-			if err := tx.Model(r).Association("Permissions").Append(toInterfaceSlice(permissionByIds)...).Error; err != nil {
-				return err
-			}
+			return err
 		}
 
 		return nil
-	})
-
-	if e != nil {
-		log.Panic().Err(e).Msg("RoleController.Store")
+	}); err != nil {
+		log.Error().Err(err).Msg("RoleController.Store")
+		return
 	}
 
 	permissions, _ := role.RoleRepo.FindByIdWithPermissions(r.ID)
@@ -202,17 +196,22 @@ func (role *RoleController) Update(ctx *gin.Context) {
 			return
 		}
 		log.Debug().Interface("input", input).Msg("RoleController.Update")
-		e := role.env.GetDB().Model(r).Update("name", input.Name)
-		log.Debug().Err(e.Error).Msg("RoleController.Update")
 	}
+	role.env.DBTransaction(func(tx *gorm.DB) error {
+		if e := tx.Model(r).Update("name", input.Name).Error; e != nil {
+			log.Error().Err(e).Msg("RoleController.Update")
+			return e
+		}
 
-	log.Debug().Interface("input.PermissionIds", input.PermissionIds).Msg("RoleController.Update")
+		log.Debug().Interface("input.PermissionIds", input.PermissionIds).Msg("RoleController.Update")
 
-	if input.PermissionIds != nil {
-		ps, _ := role.PermRepo.FindByIds(input.PermissionIds)
-		role.env.GetDB().Model(r).Association("Permissions").Clear()
-		role.env.GetDB().Model(r).Association("Permissions").Append(toInterfaceSlice(ps)...)
-	}
+		if err := role.RoleRepo.SyncPermissions(r, input.PermissionIds, tx); err != nil {
+			log.Error().Err(err).Msg("RoleController.Update")
+			return err
+		}
+
+		return nil
+	})
 
 	permissions, _ := role.RoleRepo.FindByIdWithPermissions(r.ID)
 	ctx.JSON(200, gin.H{"code": 200, "data": permissions})
@@ -262,14 +261,4 @@ func (role *RoleController) All(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"data": result})
-}
-
-func toInterfaceSlice(slice interface{}) []interface{} {
-	permissions := slice.([]*models.Permission)
-	newS := make([]interface{}, len(permissions))
-	for i, v := range permissions {
-		newS[i] = v
-	}
-
-	return newS
 }

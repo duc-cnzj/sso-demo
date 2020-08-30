@@ -49,7 +49,11 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	user := auth.UserRepo.FindByEmail(loginForm.UserName, auth.env)
+	user,err := auth.UserRepo.FindByEmail(loginForm.UserName, auth.env)
+	if err != nil {
+		log.Panic().Err(err).Msg("auth.UserRepo.FindByEmail")
+		return
+	}
 	printErrorBack := func() {
 		ctx.HTML(200, "login.tmpl", LoginFormVal{
 			RedirectUrl: redirectUrl,
@@ -69,8 +73,10 @@ func (auth *authController) Login(ctx *gin.Context) {
 
 	session := sessions.Default(ctx)
 	session.Set("user", user)
-	err := session.Save()
-	log.Debug().Err(err).Msg("authController.Login")
+	err = session.Save()
+	if err != nil {
+		log.Debug().Err(err).Msg("authController.Login")
+	}
 
 	auth.UserRepo.UpdateLastLoginAt(user)
 

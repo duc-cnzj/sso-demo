@@ -118,7 +118,7 @@ func (user *UserController) Store(ctx *gin.Context) {
 		return
 	}
 
-	userByEmail := user.UserRepo.FindByEmail(input.Email)
+	userByEmail, err := user.UserRepo.FindByEmail(input.Email)
 
 	if userByEmail != nil {
 		var errors = form.ValidateErrors{
@@ -186,6 +186,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 	}
 
 	byId, _ := user.UserRepo.FindById(uint(id))
+
 	if byId == nil {
 		exception.ModelNotFound(ctx, "user")
 		return
@@ -193,7 +194,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 
 	var updates = make([]interface{}, 0)
 	if input.Email != "" {
-		byEmail := user.UserRepo.FindByEmail(input.Email, user.env, "id <> ?", id)
+		byEmail, _ := user.UserRepo.FindByEmail(input.Email, "id <> ?", id)
 
 		if byEmail != nil && byEmail.ID != uint(id) {
 			var errors = form.ValidateErrors{
@@ -211,9 +212,9 @@ func (user *UserController) Update(ctx *gin.Context) {
 	if input.UserName != "" {
 		updates = append(updates, "user_name", input.UserName)
 	}
-	e := user.env.GetDB().Model(byId).Update(updates...)
-	if e.Error != nil {
-		log.Panic().Err(e.Error).Msg("UserController.Update")
+	if err = user.env.GetDB().Model(byId).Update(updates...).Error; err != nil {
+		log.Error().Err(err).Msg("")
+		return
 	}
 
 	ctx.JSON(200, gin.H{"code": 200, "data": byId})

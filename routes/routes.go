@@ -5,6 +5,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"sso/app/controllers/api"
 	adminAuth "sso/app/controllers/api/admin/authcontroller"
 	"sso/app/controllers/api/admin/permissioncontroller"
 	"sso/app/controllers/api/admin/rolecontroller"
@@ -41,13 +42,9 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 	// for debug
 	//router.LoadHTMLGlob("/Users/congcong/uco/sso/resources/views/*")
 
-	router.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{"code": 404, "message": "Page not found"})
-	})
+	router.NoRoute(api.NotFound)
 
-	router.Any("/ping", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{"success": true})
-	})
+	router.Any("/ping", api.Ping)
 
 	auth := webAuth.New(env)
 

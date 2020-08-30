@@ -31,15 +31,23 @@ type LoginFormVal struct {
 }
 
 func (auth *authController) Login(ctx *gin.Context) {
-	var loginForm LoginForm
+	var (
+		loginForm LoginForm
+		user *models.User
+		err error
+		token string
+	)
 
-	if err := ctx.ShouldBind(&loginForm); err != nil {
+	if err = ctx.ShouldBind(&loginForm); err != nil {
 		exception.ValidateException(ctx, err, auth.env)
 
 		return
 	}
 
-	user := auth.UserRepo.FindByEmail(loginForm.UserName)
+	if user,err = auth.UserRepo.FindByEmail(loginForm.UserName);err!=nil {
+		log.Panic().Err(err).Msg("auth.UserRepo.FindByEmail")
+	}
+
 	printErrorBack := func() {
 		ctx.JSON(401, gin.H{"code": 401, "msg": "Unauthorized!"})
 	}
@@ -56,7 +64,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 
 	auth.UserRepo.UpdateLastLoginAt(user)
 
-	token, err := jwt.GenerateToken(user, auth.env)
+	token, err = jwt.GenerateToken(user, auth.env)
 	if err != nil {
 		log.Panic().Err(err).Msg("jwt.GenerateToken")
 		return
