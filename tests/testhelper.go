@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	repos *api.AllRepo
-	s     *server.Server
+	repos         *api.AllRepo
+	s             *server.Server
 	migrateModels = []interface{}{
 		&models.User{},
 		&models.Role{},
@@ -159,7 +159,6 @@ func DeleteJson(url string, token string) *httptest.ResponseRecorder {
 	s.Engine().ServeHTTP(w, req)
 	return w
 }
-
 
 func WebPostJson(url string, data interface{}, token string) *httptest.ResponseRecorder {
 	body := &bytes.Buffer{}

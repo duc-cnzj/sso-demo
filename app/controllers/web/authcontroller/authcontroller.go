@@ -49,10 +49,9 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	user,err := auth.UserRepo.FindByEmail(loginForm.UserName, auth.env)
+	user, err := auth.UserRepo.FindByEmail(loginForm.UserName, auth.env)
 	if err != nil {
-		log.Panic().Err(err).Msg("auth.UserRepo.FindByEmail")
-		return
+		log.Error().Err(err).Msg("auth.UserRepo.FindByEmail")
 	}
 	printErrorBack := func() {
 		ctx.HTML(200, "login.tmpl", LoginFormVal{

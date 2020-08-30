@@ -33,9 +33,9 @@ type LoginFormVal struct {
 func (auth *authController) Login(ctx *gin.Context) {
 	var (
 		loginForm LoginForm
-		user *models.User
-		err error
-		token string
+		user      *models.User
+		err       error
+		token     string
 	)
 
 	if err = ctx.ShouldBind(&loginForm); err != nil {
@@ -44,7 +44,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	if user,err = auth.UserRepo.FindByEmail(loginForm.UserName);err!=nil {
+	if user, err = auth.UserRepo.FindByEmail(loginForm.UserName); err != nil {
 		log.Error().Err(err).Msg("auth.UserRepo.FindByEmail")
 	}
 
