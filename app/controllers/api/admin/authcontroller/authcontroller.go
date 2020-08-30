@@ -45,7 +45,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 	}
 
 	if user,err = auth.UserRepo.FindByEmail(loginForm.UserName);err!=nil {
-		log.Panic().Err(err).Msg("auth.UserRepo.FindByEmail")
+		log.Error().Err(err).Msg("auth.UserRepo.FindByEmail")
 	}
 
 	printErrorBack := func() {
