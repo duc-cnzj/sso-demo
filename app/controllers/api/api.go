@@ -23,9 +23,11 @@ func NewAllRepo(env *env.Env) *AllRepo {
 }
 
 func Ping(ctx *gin.Context) {
-	ctx.JSON(200, gin.H{"success": true})
+	ctx.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	ctx.String(200, `{"success":true}`)
 }
 
 func NotFound(c *gin.Context) {
-	c.JSON(404, gin.H{"code": 404, "message": "Page not found"})
+	c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	c.String(404, `{"code":404,"message":"Page not found"}`)
 }

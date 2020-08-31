@@ -111,7 +111,7 @@ func GetJson(url string, data map[string]string, token string) *httptest.Respons
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Accept", "application/json")
 	if token != "" {
-		req.Header.Add("Authorization", token)
+		req.Header.Add("Authorization", "Bearer "+token)
 	}
 	s.Engine().ServeHTTP(w, req)
 	return w
@@ -126,7 +126,7 @@ func PostJson(url string, data interface{}, token string) *httptest.ResponseReco
 	req.Header.Add("Accept", "application/json")
 
 	if token != "" {
-		req.Header.Add("Authorization", token)
+		req.Header.Add("Authorization", "Bearer "+token)
 	}
 	s.Engine().ServeHTTP(w, req)
 	return w
@@ -141,7 +141,7 @@ func PutJson(url string, data interface{}, token string) *httptest.ResponseRecor
 	req.Header.Add("Accept", "application/json")
 
 	if token != "" {
-		req.Header.Add("Authorization", token)
+		req.Header.Add("Authorization", "Bearer "+token)
 	}
 	s.Engine().ServeHTTP(w, req)
 	return w
@@ -154,7 +154,7 @@ func DeleteJson(url string, token string) *httptest.ResponseRecorder {
 	req.Header.Add("Accept", "application/json")
 
 	if token != "" {
-		req.Header.Add("Authorization", token)
+		req.Header.Add("Authorization", "Bearer "+token)
 	}
 	s.Engine().ServeHTTP(w, req)
 	return w

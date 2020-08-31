@@ -58,10 +58,11 @@ func GetBearerToken(c *gin.Context) string {
 	token := c.GetHeader("Authorization")
 
 	if token != "" && (strings.HasPrefix(token, "Bearer") || strings.HasPrefix(token, "bearer")) {
-		token = strings.TrimSpace(token[6:])
+		return strings.TrimSpace(token[6:])
 	}
+
 	log.Debug().Msg("GetBearerToken:" + token)
-	return token
+	return ""
 }
 
 func GenerateToken(user *models.User, env *env.Env) (string, error) {
