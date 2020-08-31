@@ -155,7 +155,7 @@ func (p *PermissionController) Show(c *gin.Context) {
 func (p *PermissionController) Update(c *gin.Context) {
 	var (
 		input UpdateInput
-		uri Uri
+		uri   Uri
 	)
 	if err := c.ShouldBindUri(&uri); err != nil {
 		return

@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-
 func TestAuthController_Info(t *testing.T) {
 	tests.WarpTxRollback(s, func() {
 		user := tests.NewUser(nil)
