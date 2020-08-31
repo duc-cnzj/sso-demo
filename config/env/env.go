@@ -99,12 +99,6 @@ func WithUniversalTranslator(t *ut.UniversalTranslator) func(env *Env) {
 	}
 }
 
-func WithDB(db *gorm.DB) func(env *Env) {
-	return func(env *Env) {
-		env.db = db
-	}
-}
-
 func WithRootDir(path string) func(env *Env) {
 	return func(env *Env) {
 		env.rootDir = path
