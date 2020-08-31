@@ -1,26 +1,11 @@
-package authcontroller_test
+package integrations_test
 
 import (
 	"github.com/stretchr/testify/assert"
-	"os"
-	"sso/app/controllers/api"
-	"sso/server"
 	"sso/tests"
 	"testing"
 )
 
-var (
-	repos *api.AllRepo
-	s     *server.Server
-)
-
-func TestMain(m *testing.M) {
-	pwd, _ := os.Getwd()
-
-	s, repos = tests.MainHelper(pwd + "/../../../../../.env.testing")
-
-	os.Exit(m.Run())
-}
 
 func TestAuthController_Info(t *testing.T) {
 	tests.WarpTxRollback(s, func() {

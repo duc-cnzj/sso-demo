@@ -1,31 +1,15 @@
-package usercontroller_test
+package integrations_test
 
 import (
 	"database/sql"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
-	"os"
-	"sso/app/controllers/api"
 	"sso/app/models"
-	"sso/server"
 	"sso/tests"
 	"strconv"
 	"testing"
 )
-
-var (
-	repos *api.AllRepo
-	s     *server.Server
-)
-
-func TestMain(m *testing.M) {
-	pwd, _ := os.Getwd()
-
-	s, repos = tests.MainHelper(pwd + "/../../../../../.env.testing")
-
-	os.Exit(m.Run())
-}
 
 func TestUserController_Store(t *testing.T) {
 	tests.WarpTxRollback(s, func() {

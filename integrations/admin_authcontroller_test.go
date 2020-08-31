@@ -1,4 +1,4 @@
-package authcontroller_test
+package integrations_test
 
 import (
 	"bytes"
@@ -8,38 +8,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"sso/app/controllers/api"
 	"sso/app/middlewares/jwt"
 	"sso/app/models"
-	"sso/server"
 	"sso/tests"
 	"strings"
 	"testing"
 )
-
-var (
-	repos *api.AllRepo
-	s     *server.Server
-)
-
-func TestMain(m *testing.M) {
-	pwd, _ := os.Getwd()
-
-	s, repos = tests.MainHelper(pwd + "/../../../../../.env.testing")
-
-	os.Exit(m.Run())
-}
-
-func TestPing(t *testing.T) {
-	tests.WarpTxRollback(s, func() {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/ping", nil)
-		s.Engine().ServeHTTP(w, req)
-		assert.Equal(t, 200, w.Code)
-		assert.Equal(t, `{"success":true}`, w.Body.String())
-	})
-}
 
 func TestLogin(t *testing.T) {
 	tests.WarpTxRollback(s, func() {
