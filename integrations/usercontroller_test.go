@@ -11,6 +11,51 @@ import (
 	"testing"
 )
 
+func TestUserController_Index(t *testing.T) {
+	tests.WarpTxRollback(s, func() {
+		_, token := tests.NewUserWithToken(&models.User{
+			UserName:          "duc",
+			Email:             "1@q.com",
+		})
+		data := []struct {
+			name  string
+			token string
+			data map[string]string
+			code  int
+			res   string
+		}{
+			{
+				name:  "success",
+				token: token,
+				data: map[string]string{
+					"user_name": "duc",
+				},
+				code:  200,
+				res: "duc",
+			},
+			{
+				name:  "success",
+				token: token,
+				data: map[string]string{
+					"user_name": "aaa",
+				},
+				code:  200,
+				res: "",
+			},
+		}
+
+		var w *httptest.ResponseRecorder
+		for _, test := range data {
+			t.Run(test.name, func(t *testing.T) {
+				w = tests.GetJson("/api/admin/users", test.data, test.token)
+				assert.Equal(t, test.code, w.Code)
+				assert.Contains(t, w.Body.String(), test.res)
+				t.Log(w.Body.String())
+			})
+		}
+	})
+}
+
 func TestUserController_Store(t *testing.T) {
 	tests.WarpTxRollback(s, func() {
 		_, token := tests.NewUserWithToken(nil)

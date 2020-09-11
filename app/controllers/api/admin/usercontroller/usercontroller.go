@@ -6,12 +6,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"math"
 	"sso/app/controllers/api"
+	"sso/app/filters"
 	"sso/app/models"
 	"sso/config/env"
+	filtersPkg "sso/pkg/filters"
 	"sso/utils/exception"
 	"sso/utils/form"
 	"strconv"
-	"strings"
 )
 
 type StoreInput struct {
@@ -53,10 +54,13 @@ func NewUserController(env *env.Env) *UserController {
 
 func (user *UserController) Index(ctx *gin.Context) {
 	var (
-		query QueryInput
-		count int
+		query  QueryInput
+		count  int
+		filter filtersPkg.Filterable
+		err    error
 	)
-	if err := ctx.ShouldBindQuery(&query); err != nil {
+
+	if filter, err = filters.NewUserFilter(ctx); err != nil {
 		exception.ValidateException(ctx, err, user.env)
 		return
 	}
@@ -70,42 +74,17 @@ func (user *UserController) Index(ctx *gin.Context) {
 		query.Page = 1
 	}
 
-	switch strings.ToLower(query.Sort) {
-	case "asc":
-		query.Sort = "ASC"
-	case "":
-		fallthrough
-	case "desc":
-		fallthrough
-	default:
-		query.Sort = "DESC"
-	}
-
-	q := user.env.GetDB().Model(&users)
-	if query.UserName != "" {
-		q = q.Where("user_name like ?", "%"+query.UserName+"%")
-	}
-	if query.Email != "" {
-		q = q.Where("email like ?", "%"+query.Email+"%")
-	}
 	offset := int(math.Max(float64((query.Page-1)*query.PageSize), 0))
-	q.
+	user.env.GetDB().Model(&users).
+		Scopes(filter.Apply()...).
 		Preload("Roles.Permissions").
 		Offset(offset).
 		Limit(query.PageSize).
-		Order("id " + query.Sort).
 		Find(&users)
 	if len(users) < query.PageSize {
 		count = query.PageSize*(query.Page-1) + len(users)
 	} else {
-		countQuery := user.env.GetDB().Model(&models.Role{})
-		if query.UserName != "" {
-			countQuery = countQuery.Where("user_name like ?", "%"+query.UserName+"%")
-		}
-		if query.Email != "" {
-			countQuery = countQuery.Where("email like ?", "%"+query.Email+"%")
-		}
-		countQuery.Count(&count)
+		user.env.GetDB().Model(&models.User{}).Scopes(filter.Apply()...).Count(&count)
 	}
 	ctx.JSON(200, gin.H{"code": 200, "data": users, "page": query.Page, "page_size": query.PageSize, "total": count})
 }
