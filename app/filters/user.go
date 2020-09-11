@@ -16,92 +16,68 @@ type UserInput struct {
 	Sort     string `form:"sort" json:"sort"`
 }
 
-type UserFilter struct {
-	input     *UserInput
-	scopes    []filters.GormScopeFunc
-	filters   map[string]func() filters.GormScopeFunc
-	ApplyFunc func(f filters.Filterable) []filters.GormScopeFunc
-}
-
-func NewUserFilter(ctx *gin.Context) (*UserFilter, error) {
+func NewUserFilter(ctx *gin.Context) (filters.Filterable, error) {
 	var input UserInput
 	if err := ctx.ShouldBind(&input); err != nil {
 		return nil, err
 	}
 
-	uf := &UserFilter{
-		input:     &input,
-		scopes:    make([]filters.GormScopeFunc, 0),
-		ApplyFunc: filters.DefaultApply(),
-	}
+	f := filters.NewFilter(map[string]interface{}{
+		"email":     input.Email,
+		"sort":      input.Sort,
+		"user_name": input.UserName,
+	})
 
-	uf.filters = map[string]func() filters.GormScopeFunc{
-		"user_name": uf.UserName,
-		"email":     uf.Email,
-		"sort":      uf.Sort,
-	}
-	return uf, nil
+	f.RegisterFilterFunc("user_name", UserName)
+	f.RegisterFilterFunc("email", Email)
+	f.RegisterFilterFunc("sort", Sort)
+
+	return f, nil
 }
 
-func (f *UserFilter) All() []string {
-	var all []string
-	for s := range f.filters {
-		all = append(all, s)
-	}
-	return all
-}
-
-func (f *UserFilter) Scopes() []filters.GormScopeFunc {
-	return f.scopes
-}
-
-func (f *UserFilter) ResetScopes() {
-	f.scopes = make([]filters.GormScopeFunc, 0)
-}
-
-func (f *UserFilter) GetFuncByName(s string) func() filters.GormScopeFunc {
-	if fn, ok := f.filters[s]; ok {
-		return fn
-	}
-
-	return nil
-}
-
-func (f *UserFilter) Apply() []filters.GormScopeFunc {
-	f.scopes = f.ApplyFunc(f)
-	return f.scopes
-}
-
-func (f *UserFilter) Push(scope filters.GormScopeFunc) {
-	f.scopes = append(f.scopes, scope)
-}
-
-func (f *UserFilter) UserName() filters.GormScopeFunc {
+func UserName(f filters.Filterable) filters.GormScopeFunc {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("user_name like ?", f.input.UserName)
+		if get, err := f.Get("user_name"); err != nil {
+			return db.Where("user_name like ?", get)
+		}
+
+		return db
 	}
 }
 
-func (f *UserFilter) Email() filters.GormScopeFunc {
+func Email(f filters.Filterable) filters.GormScopeFunc {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("email like ?", "%"+f.input.Email+"%")
+		if get, err := f.Get("email"); err != nil {
+			str := get.(string)
+			return db.Where("email like ?", "%"+str+"%")
+		}
+
+		return db
 	}
 }
 
-func (f *UserFilter) Sort() filters.GormScopeFunc {
-	var sort string
-	switch strings.ToLower(f.input.Sort) {
-	case "asc":
-		sort = "ASC"
-	case "":
-		fallthrough
-	case "desc":
-		fallthrough
-	default:
-		sort = "DESC"
-	}
-
+func Sort(f filters.Filterable) filters.GormScopeFunc {
 	return func(db *gorm.DB) *gorm.DB {
+		var (
+			sort string
+			err  error
+			get  interface{}
+		)
+		if get, err = f.Get("sort"); err != nil {
+			return db
+		}
+		sort = get.(string)
+		switch strings.ToLower(sort) {
+		case "asc":
+			sort = "ASC"
+		case "":
+			fallthrough
+		case "desc":
+			fallthrough
+		default:
+			sort = "DESC"
+		}
+
 		return db.Order("id " + sort)
 	}
 }
