@@ -10,15 +10,15 @@ var FieldNotFound = errors.New("field not found")
 type GormScopeFunc = func(*gorm.DB) *gorm.DB
 
 type Filterable interface {
+	SetInput(input map[string]interface{})
+	GetInput(string) (interface{}, error)
+	AllFilters() []string
+	RegisterFilterFunc(string, func(Filterable) GormScopeFunc)
 	Apply() []GormScopeFunc
 	GetFuncByName(string) func(Filterable) GormScopeFunc
-	All() []string
 	Push(GormScopeFunc)
 	Scopes() []GormScopeFunc
 	ResetScopes()
-	SetInput(input map[string]interface{})
-	Get(string) (interface{}, error)
-	RegisterFilterFunc(string, func(Filterable) GormScopeFunc)
 }
 
 type Filter struct {
@@ -36,7 +36,7 @@ func (f *Filter) RegisterFilterFunc(name string, fn func(Filterable) GormScopeFu
 	f.filters[name] = fn
 }
 
-func (f *Filter) Get(s string) (interface{}, error) {
+func (f *Filter) GetInput(s string) (interface{}, error) {
 	if data, ok := f.input[s]; ok {
 		return data, nil
 	}
@@ -47,7 +47,7 @@ func (f *Filter) SetInput(input map[string]interface{}) {
 	f.input = input
 }
 
-func (f *Filter) All() []string {
+func (f *Filter) AllFilters() []string {
 	var all []string
 	for s := range f.filters {
 		all = append(all, s)
@@ -83,7 +83,7 @@ func (f *Filter) Push(scope GormScopeFunc) {
 func DefaultApply() func(f Filterable) []GormScopeFunc {
 	return func(f Filterable) []GormScopeFunc {
 		f.ResetScopes()
-		for _, key := range f.All() {
+		for _, key := range f.AllFilters() {
 			if fn := f.GetFuncByName(key); fn != nil {
 				f.Push(fn(f))
 			}

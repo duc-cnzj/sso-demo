@@ -37,7 +37,7 @@ func NewUserFilter(ctx *gin.Context) (filters.Filterable, error) {
 
 func UserName(f filters.Filterable) filters.GormScopeFunc {
 	return func(db *gorm.DB) *gorm.DB {
-		if get, err := f.Get("user_name"); err != nil {
+		if get, err := f.GetInput("user_name"); err != nil {
 			return db.Where("user_name like ?", get)
 		}
 
@@ -47,7 +47,7 @@ func UserName(f filters.Filterable) filters.GormScopeFunc {
 
 func Email(f filters.Filterable) filters.GormScopeFunc {
 	return func(db *gorm.DB) *gorm.DB {
-		if get, err := f.Get("email"); err != nil {
+		if get, err := f.GetInput("email"); err != nil {
 			str := get.(string)
 			return db.Where("email like ?", "%"+str+"%")
 		}
@@ -63,7 +63,7 @@ func Sort(f filters.Filterable) filters.GormScopeFunc {
 			err  error
 			get  interface{}
 		)
-		if get, err = f.Get("sort"); err != nil {
+		if get, err = f.GetInput("sort"); err != nil {
 			return db
 		}
 		sort = get.(string)
