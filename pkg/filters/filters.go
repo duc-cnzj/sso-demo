@@ -24,10 +24,7 @@ func DefaultApply() func(f Filterable) []GormScopeFunc {
 			}
 		}
 
-		var sos = make([]GormScopeFunc, len(f.Scopes()))
-		copy(sos, f.Scopes())
-
-		return sos
+		return f.Scopes()
 	}
 }
 
