@@ -28,9 +28,9 @@ func NewUserFilter(ctx *gin.Context) (filters.Filterable, error) {
 		"user_name": input.UserName,
 	})
 
-	f.RegisterFilterFunc("user_name", UserName)
-	f.RegisterFilterFunc("email", Email)
-	f.RegisterFilterFunc("sort", Sort)
+	f.RegisterFunc("user_name", UserName)
+	f.RegisterFunc("email", Email)
+	f.RegisterFunc("sort", Sort)
 
 	return f, nil
 }

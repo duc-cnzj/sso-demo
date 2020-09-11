@@ -13,7 +13,7 @@ type Filterable interface {
 	SetInput(input map[string]interface{})
 	GetInput(string) (interface{}, error)
 	AllFilters() []string
-	RegisterFilterFunc(string, func(Filterable) GormScopeFunc)
+	RegisterFunc(string, func(Filterable) GormScopeFunc)
 	Apply() []GormScopeFunc
 	GetFuncByName(string) func(Filterable) GormScopeFunc
 	Push(GormScopeFunc)
@@ -32,7 +32,7 @@ func NewFilter(input map[string]interface{}) *Filter {
 	return &Filter{input: input, scopes: make([]GormScopeFunc, 0), ApplyFunc: DefaultApply(), filters: map[string]func(Filterable) GormScopeFunc{}}
 }
 
-func (f *Filter) RegisterFilterFunc(name string, fn func(Filterable) GormScopeFunc) {
+func (f *Filter) RegisterFunc(name string, fn func(Filterable) GormScopeFunc) {
 	f.filters[name] = fn
 }
 
