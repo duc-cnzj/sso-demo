@@ -1,8 +1,7 @@
 package filters
 
 import (
-"github.com/jinzhu/gorm"
-"reflect"
+	"github.com/jinzhu/gorm"
 )
 
 type GormScopeFunc = func(*gorm.DB) *gorm.DB
@@ -10,7 +9,7 @@ type GormScopeFunc = func(*gorm.DB) *gorm.DB
 type Filterable interface {
 	Apply() []GormScopeFunc
 	GetFuncByName(string) func() GormScopeFunc
-	All() interface{}
+	All() []string
 	Push(GormScopeFunc)
 	Scopes() []GormScopeFunc
 	ResetScopes()
@@ -19,12 +18,9 @@ type Filterable interface {
 func DefaultApply() func(f Filterable) []GormScopeFunc {
 	return func(f Filterable) []GormScopeFunc {
 		f.ResetScopes()
-		refVaIn := reflect.ValueOf(f.All())
-		for i := 0; i < refVaIn.Elem().NumField(); i++ {
-			if !refVaIn.Elem().Field(i).IsZero() {
-				if fn := f.GetFuncByName(refVaIn.Elem().Type().Field(i).Name); fn != nil {
-					f.Push(fn())
-				}
+		for _, key := range f.All() {
+			if fn := f.GetFuncByName(key); fn != nil {
+				f.Push(fn())
 			}
 		}
 

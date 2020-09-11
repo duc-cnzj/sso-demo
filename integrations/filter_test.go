@@ -40,6 +40,7 @@ func TestUserFilter(t *testing.T) {
 	//s.Env().GetDB().Scopes(filter.Apply()...).Find(&res)
 	//s.Env().GetDB().Scopes(filter.Apply()...).Find(&res)
 	testutil.AssertEqual(t, len(filter.Apply()), len(filter.Apply()))
+	testutil.AssertEqual(t, len(filter.Apply()), 3)
 }
 
 func BenchmarkFilter(b *testing.B) {

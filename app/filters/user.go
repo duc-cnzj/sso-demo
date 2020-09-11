@@ -34,12 +34,21 @@ func NewUserFilter(ctx *gin.Context) (*UserFilter, error) {
 		scopes:    make([]filters.GormScopeFunc, 0),
 		ApplyFunc: filters.DefaultApply(),
 	}
+
 	uf.filters = map[string]func() filters.GormScopeFunc{
-		"UserName": uf.UserName,
-		"Email":    uf.Email,
-		"Sort":     uf.Sort,
+		"user_name": uf.UserName,
+		"email":     uf.Email,
+		"sort":      uf.Sort,
 	}
 	return uf, nil
+}
+
+func (f *UserFilter) All() []string {
+	var all []string
+	for s := range f.filters {
+		all = append(all, s)
+	}
+	return all
 }
 
 func (f *UserFilter) Scopes() []filters.GormScopeFunc {
@@ -65,10 +74,6 @@ func (f *UserFilter) Apply() []filters.GormScopeFunc {
 
 func (f *UserFilter) Push(scope filters.GormScopeFunc) {
 	f.scopes = append(f.scopes, scope)
-}
-
-func (f *UserFilter) All() interface{} {
-	return f.input
 }
 
 func (f *UserFilter) UserName() filters.GormScopeFunc {
