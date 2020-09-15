@@ -64,6 +64,12 @@ func (user *UserController) Index(ctx *gin.Context) {
 		exception.ValidateException(ctx, err, user.env)
 		return
 	}
+
+	if err := ctx.ShouldBind(&query); err != nil {
+		exception.ValidateException(ctx, err, user.env)
+		return
+	}
+
 	log.Debug().Interface("query", query).Msg("UserController.Index")
 	var users []models.User
 	if query.PageSize <= 0 {

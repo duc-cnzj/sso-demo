@@ -23,6 +23,7 @@ var (
 		&models.User{},
 		&models.Role{},
 		&models.Permission{},
+		&models.ApiToken{},
 	}
 	mu = &sync.Mutex{}
 )

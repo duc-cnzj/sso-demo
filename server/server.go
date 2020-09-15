@@ -173,7 +173,7 @@ func (s *Server) InitSession() error {
 		store redis.Store
 		err   error
 	)
-	if store, err = redis.NewStoreWithPool(s.redis); err != nil {
+	if store, err = redis.NewStoreWithPool(s.redis, []byte("secret")); err != nil {
 		return err
 	}
 
@@ -229,6 +229,7 @@ func ReadConfig(configPath string) (*env.Config, error) {
 		RedisPort:           viper.GetUint("REDIS_PORT"),
 		SessionLifetime:     viper.GetInt("SESSION_LIFETIME"),
 		AccessTokenLifetime: viper.GetInt("ACCESS_TOKEN_LIFETIME"),
+		ApiTokenLifetime:    viper.GetInt("API_TOKEN_LIFETIME"),
 		JwtSecret:           viper.GetString("JWT_SECRET"),
 		JwtExpiresSeconds:   viper.GetInt64("JWT_EXPIRES_AT"),
 	}

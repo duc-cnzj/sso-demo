@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"sso/app/controllers/api"
+	"sso/app/controllers/api/admin/apitokencontroller"
 	adminAuth "sso/app/controllers/api/admin/authcontroller"
 	"sso/app/controllers/api/admin/permissioncontroller"
 	"sso/app/controllers/api/admin/rolecontroller"
@@ -74,35 +75,39 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 		apiAuth := adminAuth.New(env)
 		adminGroup.POST("/login", apiAuth.Login)
 
-		api := adminGroup.Group("/", jwt.AuthMiddleware(env))
-		api.POST("/user/info", apiAuth.Info)
-		api.POST("/logout", apiAuth.Logout)
+		apiGroup := adminGroup.Group("/", jwt.AuthMiddleware(env))
+		apiGroup.POST("/user/info", apiAuth.Info)
+		apiGroup.POST("/logout", apiAuth.Logout)
 
 		role := rolecontroller.NewRoleController(env)
-		api.GET("/all_roles", role.All)
-		api.GET("/roles", role.Index)
-		api.POST("/roles", role.Store)
-		api.GET("/roles/:role", role.Show)
-		api.PUT("/roles/:role", role.Update)
-		api.DELETE("/roles/:role", role.Destroy)
+		apiGroup.GET("/all_roles", role.All)
+		apiGroup.GET("/roles", role.Index)
+		apiGroup.POST("/roles", role.Store)
+		apiGroup.GET("/roles/:role", role.Show)
+		apiGroup.PUT("/roles/:role", role.Update)
+		apiGroup.DELETE("/roles/:role", role.Destroy)
 
 		permissions := permissioncontroller.NewPermissionController(env)
-		api.GET("/permissions_by_group", permissions.GetByGroups)
-		api.GET("/get_permission_projects", permissions.GetPermissionProjects)
-		api.GET("/permissions", permissions.Index)
-		api.POST("/permissions", permissions.Store)
-		api.GET("/permissions/:permission", permissions.Show)
-		api.PUT("/permissions/:permission", permissions.Update)
-		api.DELETE("/permissions/:permission", permissions.Destroy)
+		apiGroup.GET("/permissions_by_group", permissions.GetByGroups)
+		apiGroup.GET("/get_permission_projects", permissions.GetPermissionProjects)
+		apiGroup.GET("/permissions", permissions.Index)
+		apiGroup.POST("/permissions", permissions.Store)
+		apiGroup.GET("/permissions/:permission", permissions.Show)
+		apiGroup.PUT("/permissions/:permission", permissions.Update)
+		apiGroup.DELETE("/permissions/:permission", permissions.Destroy)
 
 		user := usercontroller.NewUserController(env)
-		api.POST("/users/:user/force_logout", user.ForceLogout)
-		api.POST("/users/:user/sync_roles", user.SyncRoles)
-		api.GET("/users", user.Index)
-		api.POST("/users", user.Store)
-		api.GET("/users/:user", user.Show)
-		api.PUT("/users/:user", user.Update)
-		api.DELETE("/users/:user", user.Destroy)
+		apiGroup.POST("/users/:user/force_logout", user.ForceLogout)
+		apiGroup.POST("/users/:user/sync_roles", user.SyncRoles)
+		apiGroup.GET("/users", user.Index)
+		apiGroup.POST("/users", user.Store)
+		apiGroup.GET("/users/:user", user.Show)
+		apiGroup.PUT("/users/:user", user.Update)
+		apiGroup.DELETE("/users/:user", user.Destroy)
+
+		apiToken := apitokencontroller.New(env)
+		apiGroup.GET("/users/:user/api_tokens", apiToken.Index)
+		apiGroup.GET("/api_tokens", apiToken.Index)
 	}
 
 	router.Any("/admin/*action", func(ctx *gin.Context) {

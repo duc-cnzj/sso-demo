@@ -12,6 +12,7 @@ var migrateModels = []interface{}{
 	&models.User{},
 	&models.Role{},
 	&models.Permission{},
+	&models.ApiToken{},
 }
 
 var migrateCmd = &cobra.Command{

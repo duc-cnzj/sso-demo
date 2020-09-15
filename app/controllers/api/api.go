@@ -5,6 +5,7 @@ import (
 	"sso/config/env"
 	"sso/repositories/permission_repository"
 	"sso/repositories/role_repositories"
+	"sso/repositories/token_repository"
 	"sso/repositories/user_repository"
 )
 
@@ -12,6 +13,7 @@ type AllRepo struct {
 	PermRepo *permission_repository.PermissionRepository
 	RoleRepo *role_repositories.RoleRepository
 	UserRepo *user_repository.UserRepository
+	TokenRepo *token_repository.TokenRepository
 }
 
 func NewAllRepo(env *env.Env) *AllRepo {
@@ -19,6 +21,7 @@ func NewAllRepo(env *env.Env) *AllRepo {
 		PermRepo: permission_repository.NewPermissionRepository(env),
 		RoleRepo: role_repositories.NewRoleRepository(env),
 		UserRepo: user_repository.NewUserRepository(env),
+		TokenRepo: token_repository.NewTokenRepository(env),
 	}
 }
 

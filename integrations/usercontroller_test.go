@@ -1,7 +1,6 @@
 package integrations_test
 
 import (
-	"database/sql"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
@@ -14,13 +13,13 @@ import (
 func TestUserController_Index(t *testing.T) {
 	tests.WarpTxRollback(s, func() {
 		_, token := tests.NewUserWithToken(&models.User{
-			UserName:          "duc",
-			Email:             "1@q.com",
+			UserName: "duc",
+			Email:    "1@q.com",
 		})
 		data := []struct {
 			name  string
 			token string
-			data map[string]string
+			data  map[string]string
 			code  int
 			res   string
 		}{
@@ -30,8 +29,8 @@ func TestUserController_Index(t *testing.T) {
 				data: map[string]string{
 					"user_name": "duc",
 				},
-				code:  200,
-				res: "duc",
+				code: 200,
+				res:  "duc",
 			},
 			{
 				name:  "success",
@@ -39,8 +38,8 @@ func TestUserController_Index(t *testing.T) {
 				data: map[string]string{
 					"user_name": "aaa",
 				},
-				code:  200,
-				res: "",
+				code: 200,
+				res:  "",
 			},
 		}
 
@@ -272,12 +271,8 @@ func TestUserController_ForceLogout(t *testing.T) {
 	tests.WarpTxRollback(s, func() {
 		// api token logout token 都会不一样
 		u, token := tests.NewUserWithToken(&models.User{
-			UserName: "duc",
-			Email:    "1@q.c",
-			ApiToken: sql.NullString{
-				String: "1234",
-				Valid:  true,
-			},
+			UserName:    "duc",
+			Email:       "1@q.c",
 			LogoutToken: "1234",
 			Password:    "123",
 		})
@@ -309,7 +304,6 @@ func TestUserController_ForceLogout(t *testing.T) {
 				t.Log(w.Body.String())
 				if w.Code == 200 {
 					byId, _ := repos.UserRepo.FindById(u.ID)
-					assert.NotEqual(t, byId.ApiToken.String, u.ApiToken.String)
 					assert.NotEqual(t, byId.LogoutToken, u.LogoutToken)
 				}
 			})

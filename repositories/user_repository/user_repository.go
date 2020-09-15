@@ -1,8 +1,8 @@
 package user_repository
 
 import (
-	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
@@ -10,6 +10,10 @@ import (
 	"sso/config/env"
 	"sso/utils/helper"
 	"time"
+)
+
+var (
+	ErrorTokenExpired = errors.New("token expired")
 )
 
 type UserRepository struct {
@@ -25,6 +29,7 @@ func NewUserRepository(env *env.Env) *UserRepository {
 func (repo *UserRepository) FindByEmail(email string, wheres ...interface{}) (*models.User, error) {
 	user := &models.User{}
 
+	log.Debug().Interface("email", wheres).Interface("e", email).Msg("da")
 	if err := repo.env.GetDB().Where("email = ?", email).First(user, wheres...).Error; err != nil {
 		log.Debug().Err(err).Msg("findByEmail")
 		return nil, err
@@ -74,26 +79,21 @@ func (repo *UserRepository) SyncRoles(user *models.User, roles []*models.Role) e
 	})
 }
 
-// 登出用户，为了保证一处登出，处处登出，必须重置 api_token 和 logout_token
-// api_token 重置之后会重定向到 sso login page, 但是 sso 依然是登陆状态
-// 所以 sso 会重新生成 api_token，导致登出没有效果
-// 因此引入 logout_token 如果 sso session 中的 logout_token 不一样，那么代表强制登出
-// 以此来保证 用户登出时，api_token 失效，并且 sso 也登陆过期
 func (repo *UserRepository) ForceLogout(user *models.User) {
-	repo.GenerateApiToken(user, true)
 	repo.GenerateLogoutToken(user)
+	repo.env.GetDB().Where("user_id = ?", user.ID).Delete(&models.ApiToken{})
 }
 
-func (repo *UserRepository) GenerateApiToken(user *models.User, forceFill bool) string {
-	var try int
+func (repo *UserRepository) GenerateApiToken(user *models.User) string {
+	var (
+		try      int
+		apiToken = &models.ApiToken{}
+	)
 
 	log.Debug().Interface("user", user).Msg("GenerateApiToken")
-	// 如果生成过token，并且没过期，则直接返回
-	if !forceFill &&
-		user.ApiToken.Valid &&
-		user.ApiToken.String != "" &&
-		!repo.TokenExpired(user) {
-		return user.ApiToken.String
+
+	data := map[string]interface{}{
+		"user_id": user.ID,
 	}
 
 	for {
@@ -101,18 +101,16 @@ func (repo *UserRepository) GenerateApiToken(user *models.User, forceFill bool) 
 			panic("error GenerateAccessToken try > 10")
 		}
 
-		str := helper.RandomString(64)
-		AccessToken := sql.NullString{
-			String: str,
-			Valid:  true,
-		}
+		token := helper.RandomString(64)
 
-		exists := repo.env.GetDB().Table(models.User{}.TableName()).Where("api_token = ?", str).Find(&models.User{})
+		data["api_token"] = token
+
+		exists := repo.env.GetDB().First(apiToken, data)
 		if exists.Error != nil && errors.Is(gorm.ErrRecordNotFound, exists.Error) {
-			user.ApiToken = AccessToken
-			repo.env.GetDB().Model(user).Update("api_token", AccessToken)
-			repo.env.GetDB().Model(user).Update(map[string]interface{}{"api_token": AccessToken, "api_token_created_at": time.Now()})
-			return str
+			apiToken.ApiToken = token
+			apiToken.UserID = user.ID
+			repo.env.GetDB().Create(apiToken)
+			return token
 		}
 
 		try++
@@ -159,26 +157,30 @@ func (repo *UserRepository) GenerateAccessToken(user *models.User) string {
 	}
 }
 
-func (repo *UserRepository) FindByToken(token string) (*models.User, error) {
-	user := &models.User{}
+func (repo *UserRepository) FindByToken(token string, updateLastUseAt bool) (*models.User, error) {
+	var (
+		apiToken = &models.ApiToken{}
+	)
 
-	if err := repo.env.GetDB().Where("api_token = ?", token).First(user).Error; err != nil {
-		log.Debug().Err(err).Msg("FindByToken")
+	if err := repo.env.GetDB().Preload("User").First(apiToken, map[string]interface{}{"api_token": token}).Error; err != nil {
 		return nil, err
 	}
 
-	return user, nil
-}
-
-func (repo *UserRepository) TokenExpired(user *models.User) bool {
-	seconds := time.Second * time.Duration(repo.env.Config().SessionLifetime)
-	if user.ApiToken.Valid &&
-		user.ApiToken.String != "" &&
-		time.Now().Before(user.ApiTokenCreatedAt.Add(seconds)) {
-		return false
+	seconds := time.Second * time.Duration(repo.env.Config().ApiTokenLifetime)
+	sub := apiToken.CreatedAt.Add(seconds).Sub(time.Now())
+	log.Debug().Interface("sub", sub).Interface("sec", seconds).Interface("ca",apiToken.CreatedAt).Interface("now",time.Now()).Msg("dad")
+	if sub < 0 {
+		log.Debug().Msg("token 过期")
+		repo.env.GetDB().Delete(apiToken)
+		return nil, fmt.Errorf("%w %d", ErrorTokenExpired, sub)
 	}
 
-	return true
+	if updateLastUseAt {
+		now := time.Now()
+		repo.env.GetDB().Model(apiToken).Update("LastUseAt", &now)
+	}
+
+	return &apiToken.User, nil
 }
 
 func (repo *UserRepository) SyncPermissions(user *models.User, permissions []interface{}) error {

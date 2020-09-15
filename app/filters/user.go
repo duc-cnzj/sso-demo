@@ -10,9 +10,6 @@ import (
 type UserInput struct {
 	UserName string `form:"user_name" json:"user_name"`
 	Email    string `form:"email" json:"email"`
-
-	Page     int    `form:"page" json:"page"`
-	PageSize int    `form:"page_size" json:"page_size"`
 	Sort     string `form:"sort" json:"sort"`
 }
 

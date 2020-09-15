@@ -13,6 +13,7 @@ type Config struct {
 	AppEnv              string
 	AppPort             uint
 	SessionLifetime     int
+	ApiTokenLifetime     int
 	AccessTokenLifetime int
 
 	// db
@@ -138,6 +139,7 @@ func (e *Env) PrintConfig() {
 	log.Debug().Msgf("%20s: %v", "RedisPort", e.config.RedisPort)
 	log.Debug().Msgf("%20s: %v", "SessionLifetime", e.config.SessionLifetime)
 	log.Debug().Msgf("%20s: %v", "AccessTokenLifetime", e.config.AccessTokenLifetime)
+	log.Debug().Msgf("%20s: %v", "ApiTokenLifetime", e.config.ApiTokenLifetime)
 	log.Debug().Msgf("%20s: %v", "JwtSecret", e.config.JwtSecret)
 	log.Debug().Msgf("%20s: %v", "JwtExpiresSeconds", e.config.JwtExpiresSeconds)
 }

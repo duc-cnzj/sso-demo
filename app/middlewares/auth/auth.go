@@ -86,7 +86,8 @@ func ApiMiddleware(env *env.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.Request.Header.Get("X-Request-Token")
 		if token != "" {
-			user, _ := userRepo.FindByToken(token)
+			user, err := userRepo.FindByToken(token, true)
+			log.Debug().Interface("user",user).Err(err).Msg("ApiMiddleware")
 			if user != nil {
 				c.Set("user", user)
 				c.Next()

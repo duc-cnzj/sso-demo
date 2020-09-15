@@ -22,11 +22,6 @@ type authController struct {
 	*api.AllRepo
 }
 
-type LoginFormVal struct {
-	RedirectUrl string
-	Errors      []string
-}
-
 func (auth *authController) Logout(c *gin.Context) {
 	u, exists := c.Get("user")
 	if exists {
@@ -44,10 +39,6 @@ func (auth *authController) Info(c *gin.Context) {
 		log.Fatal().Err(err).Msg("authController.Info")
 		return
 	}
-	if !auth.UserRepo.TokenExpired(user) {
-		c.JSON(200, gin.H{"data": user})
-		return
-	}
 
-	c.JSON(401, gin.H{"code": 401})
+	c.JSON(200, gin.H{"data": user})
 }

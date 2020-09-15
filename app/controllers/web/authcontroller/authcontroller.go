@@ -49,7 +49,7 @@ func (auth *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, err := auth.UserRepo.FindByEmail(loginForm.UserName, auth.env)
+	user, err := auth.UserRepo.FindByEmail(loginForm.UserName)
 	if err != nil {
 		log.Error().Err(err).Msg("auth.UserRepo.FindByEmail")
 	}
@@ -113,7 +113,7 @@ func (auth *authController) SelectSystem(c *gin.Context) {
 
 func (auth *authController) AccessToken(c *gin.Context) {
 	var jsonData struct {
-		AccessToken string `json:"access_token"`
+		AccessToken string `json:"access_token" form:"access_token"`
 	}
 	err := c.BindJSON(&jsonData)
 	if err != nil {
@@ -134,7 +134,7 @@ func (auth *authController) AccessToken(c *gin.Context) {
 		if user != nil {
 			do, err := conn.Do("DEL", jsonData.AccessToken)
 			log.Debug().Err(err).Interface("do", do).Msg("delete access token")
-			c.JSON(200, gin.H{"api_token": auth.UserRepo.GenerateApiToken(user, false), "expire_seconds": auth.env.Config().AccessTokenLifetime})
+			c.JSON(200, gin.H{"api_token": auth.UserRepo.GenerateApiToken(user), "expire_seconds": auth.env.Config().AccessTokenLifetime})
 			return
 		}
 	}

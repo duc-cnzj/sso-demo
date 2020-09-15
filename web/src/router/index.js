@@ -98,6 +98,12 @@ export const constantRoutes = [
         name: 'Table',
         component: () => import('@/views/user/index'),
         meta: { title: '用户管理', icon: 'el-icon-user' }
+      },
+      {
+        path: 'api_token',
+        name: 'Table',
+        component: () => import('@/views/user/tokens'),
+        meta: { title: '用户token管理', icon: 'el-icon-user' }
       }
     ]
   },
