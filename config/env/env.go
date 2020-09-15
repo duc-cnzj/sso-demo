@@ -13,7 +13,7 @@ type Config struct {
 	AppEnv              string
 	AppPort             uint
 	SessionLifetime     int
-	ApiTokenLifetime     int
+	ApiTokenLifetime    int
 	AccessTokenLifetime int
 
 	// db

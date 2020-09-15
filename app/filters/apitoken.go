@@ -43,7 +43,7 @@ func UserId(f filters.Filterable) filters.GormScopeFunc {
 			return db
 		}
 
-		id:=userId.(uint)
+		id := userId.(uint)
 		if id > 0 {
 			return db.Where("user_id = ?", id)
 		}

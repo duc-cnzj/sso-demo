@@ -198,7 +198,7 @@ func (role *RoleController) Update(ctx *gin.Context) {
 		log.Debug().Interface("input", input).Msg("RoleController.Update")
 	}
 	role.env.DBTransaction(func(tx *gorm.DB) error {
-		if e := tx.Model(r).Update("name", input.Name).Error; e != nil {
+		if e := tx.Model(r).Updates(map[string]interface{}{"name": input.Name}).Error; e != nil {
 			log.Error().Err(e).Msg("RoleController.Update")
 			return e
 		}

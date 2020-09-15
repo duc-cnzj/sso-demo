@@ -10,17 +10,17 @@ import (
 )
 
 type AllRepo struct {
-	PermRepo *permission_repository.PermissionRepository
-	RoleRepo *role_repositories.RoleRepository
-	UserRepo *user_repository.UserRepository
-	TokenRepo *token_repository.TokenRepository
+	PermRepo  permission_repository.PermissionRepositoryImp
+	RoleRepo  role_repositories.RoleRepositoryImp
+	UserRepo  user_repository.UserRepositoryImp
+	TokenRepo token_repository.TokenRepositoryImp
 }
 
 func NewAllRepo(env *env.Env) *AllRepo {
 	return &AllRepo{
-		PermRepo: permission_repository.NewPermissionRepository(env),
-		RoleRepo: role_repositories.NewRoleRepository(env),
-		UserRepo: user_repository.NewUserRepository(env),
+		PermRepo:  permission_repository.NewPermissionRepository(env),
+		RoleRepo:  role_repositories.NewRoleRepository(env),
+		UserRepo:  user_repository.NewUserRepository(env),
 		TokenRepo: token_repository.NewTokenRepository(env),
 	}
 }

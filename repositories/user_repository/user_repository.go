@@ -16,6 +16,22 @@ var (
 	ErrorTokenExpired = errors.New("token expired")
 )
 
+type UserRepositoryImp interface {
+	FindByEmail(string, ...interface{}) (*models.User, error)
+	GeneratePwd(string) (string, error)
+	Create(*models.User) error
+	FindById(uint) (*models.User, error)
+	SyncRoles(*models.User, []*models.Role) error
+	ForceLogout(*models.User)
+	GenerateApiToken(*models.User) string
+	GenerateLogoutToken(*models.User)
+	GenerateAccessToken(*models.User) string
+	FindByToken(string, bool) (*models.User, error)
+	SyncPermissions(*models.User, []interface{}) error
+	UpdateLastLoginAt(*models.User)
+	FindWithRoles(int) (*models.User, error)
+}
+
 type UserRepository struct {
 	env *env.Env
 }
@@ -119,7 +135,7 @@ func (repo *UserRepository) GenerateApiToken(user *models.User) string {
 
 func (repo *UserRepository) GenerateLogoutToken(user *models.User) {
 	str := helper.RandomString(64)
-	repo.env.GetDB().Model(user).Update("logout_token", str)
+	repo.env.GetDB().Model(user).Updates(map[string]interface{}{"logout_token": str})
 }
 
 func (repo *UserRepository) GenerateAccessToken(user *models.User) string {
@@ -168,7 +184,7 @@ func (repo *UserRepository) FindByToken(token string, updateLastUseAt bool) (*mo
 
 	seconds := time.Second * time.Duration(repo.env.Config().ApiTokenLifetime)
 	sub := apiToken.CreatedAt.Add(seconds).Sub(time.Now())
-	log.Debug().Interface("sub", sub).Interface("sec", seconds).Interface("ca",apiToken.CreatedAt).Interface("now",time.Now()).Msg("dad")
+	log.Debug().Interface("sub", sub).Interface("sec", seconds).Interface("ca", apiToken.CreatedAt).Interface("now", time.Now()).Msg("dad")
 	if sub < 0 {
 		log.Debug().Msg("token 过期")
 		repo.env.GetDB().Delete(apiToken)
@@ -177,7 +193,7 @@ func (repo *UserRepository) FindByToken(token string, updateLastUseAt bool) (*mo
 
 	if updateLastUseAt {
 		now := time.Now()
-		repo.env.GetDB().Model(apiToken).Update("LastUseAt", &now)
+		repo.env.GetDB().Model(apiToken).Updates(map[string]interface{}{"LastUseAt": &now})
 	}
 
 	return &apiToken.User, nil
@@ -196,7 +212,7 @@ func (repo *UserRepository) SyncPermissions(user *models.User, permissions []int
 }
 
 func (repo *UserRepository) UpdateLastLoginAt(user *models.User) {
-	repo.env.GetDB().Model(user).Update("last_login_at", time.Now())
+	repo.env.GetDB().Model(user).Updates(map[string]interface{}{"last_login_at": time.Now()})
 }
 
 func (repo *UserRepository) FindWithRoles(id int) (*models.User, error) {

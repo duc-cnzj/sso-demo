@@ -177,7 +177,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 		return
 	}
 
-	var updates = make([]interface{}, 0)
+	var updates = map[string]interface{}{}
 	if input.Email != "" {
 		byEmail, _ := user.UserRepo.FindByEmail(input.Email, "id <> ?", id)
 
@@ -192,12 +192,12 @@ func (user *UserController) Update(ctx *gin.Context) {
 			return
 		}
 
-		updates = append(updates, "email", input.Email)
+		updates["email"] = input.Email
 	}
 	if input.UserName != "" {
-		updates = append(updates, "user_name", input.UserName)
+		updates["user_name"] = input.UserName
 	}
-	if err = user.env.GetDB().Model(byId).Update(updates...).Error; err != nil {
+	if err = user.env.GetDB().Model(byId).Updates(updates).Error; err != nil {
 		log.Error().Err(err).Msg("")
 		return
 	}

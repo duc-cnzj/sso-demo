@@ -8,6 +8,15 @@ import (
 	"sso/repositories/permission_repository"
 )
 
+type RoleRepositoryImp interface {
+	FindByIds([]uint) ([]*models.Role, error)
+	FindById(uint) (*models.Role, error)
+	FindByName(string) (*models.Role, error)
+	FindByIdWithPermissions(uint) (*models.Role, error)
+	Create(*models.Role) error
+	SyncPermissions(*models.Role, []uint, *gorm.DB) error
+}
+
 type RoleRepository struct {
 	env *env.Env
 }

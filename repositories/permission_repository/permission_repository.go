@@ -6,6 +6,13 @@ import (
 	"sso/config/env"
 )
 
+type PermissionRepositoryImp interface {
+	FindByIds([]uint) ([]*models.Permission, error)
+	FindById(uint) (*models.Permission, error)
+	FindByName(string) (*models.Permission, error)
+	Create(*models.Permission) error
+}
+
 type PermissionRepository struct {
 	env *env.Env
 }

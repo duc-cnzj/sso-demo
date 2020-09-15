@@ -1,6 +1,7 @@
 package authcontroller
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"sso/app/controllers/api"
@@ -35,8 +36,10 @@ func (auth *authController) Logout(c *gin.Context) {
 func (auth *authController) Info(c *gin.Context) {
 	userCtx, _ := c.Get("user")
 	user := userCtx.(*models.User)
-	if err := auth.env.GetDB().Preload("Roles.Permissions").Find(&user).Error; err != nil {
+	if err := auth.env.GetDB().Preload("Roles.Permissions").First(&user).Error; err != nil {
 		log.Fatal().Err(err).Msg("authController.Info")
+		c.AbortWithError(500, errors.New("internal error"))
+
 		return
 	}
 

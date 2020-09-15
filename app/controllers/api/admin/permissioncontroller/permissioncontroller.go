@@ -182,7 +182,9 @@ func (p *PermissionController) Update(c *gin.Context) {
 		return
 	}
 
-	e := p.env.GetDB().Model(permission).Update("name", input.Name, "project", input.Project)
+	e := p.env.GetDB().Model(permission).Updates(map[string]interface{}{
+		"name": input.Name, "project": input.Project,
+	})
 	if e.Error != nil {
 		log.Panic().Msg(e.Error.Error())
 	}

@@ -83,11 +83,12 @@ func CheckLogoutTokenIsChanged(sessionLogoutToken string, id uint, env *env.Env)
 func ApiMiddleware(env *env.Env) gin.HandlerFunc {
 	userRepo := user_repository.NewUserRepository(env)
 
+	// todo 需要优化，这个接口访问最频繁，但是查了2次数据库
 	return func(c *gin.Context) {
 		token := c.Request.Header.Get("X-Request-Token")
 		if token != "" {
 			user, err := userRepo.FindByToken(token, true)
-			log.Debug().Interface("user",user).Err(err).Msg("ApiMiddleware")
+			log.Debug().Interface("user", user).Err(err).Msg("ApiMiddleware")
 			if user != nil {
 				c.Set("user", user)
 				c.Next()
