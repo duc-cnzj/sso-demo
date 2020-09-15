@@ -45,13 +45,14 @@ func MainHelper(env string) (*server.Server, *api.AllRepo) {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 	gin.SetMode(gin.ReleaseMode)
 	s, err = NewTestServer(env)
+
 	if err != nil {
 		log.Panic(err)
 	}
+	migrate := s.Env().GetDB().AutoMigrate(migrateModels...)
 
 	repos = api.NewAllRepo(s.Env())
 
-	migrate := s.Env().GetDB().AutoMigrate(migrateModels...)
 	if migrate.Error != nil {
 		log.Fatal("migrate.Error", migrate.Error.Error())
 	}
