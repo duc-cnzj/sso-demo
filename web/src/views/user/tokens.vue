@@ -28,8 +28,8 @@
         </template>
       </el-table-column>
       <el-table-column label="token" min-width="300px">
-        <template slot-scope="{row}">
-          <span style="cursor: pointer;" v-text="row.api_token" />
+        <template slot-scope="scope">
+          <span style="cursor: pointer;" @click="scope.row.show = !scope.row.show">{{ scope.row.show ? scope.row.api_token : "***********" }}</span>
         </template>
       </el-table-column>
       <el-table-column label="最后使用时间" min-width="160px">
