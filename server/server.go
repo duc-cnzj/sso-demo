@@ -48,6 +48,8 @@ func (s *Server) Env() *env.Env {
 }
 
 func (s *Server) Init(configPath, rootPath string) error {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
 	if err := s.LoadConfig(configPath); err != nil {
 		return err
 	}
@@ -76,8 +78,6 @@ func (s *Server) Init(configPath, rootPath string) error {
 	)
 
 	gob.Register(&models.User{})
-
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	if s.env.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
