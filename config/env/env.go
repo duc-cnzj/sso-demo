@@ -62,7 +62,7 @@ func (e *Env) RedisPool() *redis.Pool {
 }
 
 func (e *Env) IsProduction() bool {
-	return e.Config().AppEnv == "production"
+	return e.Config().AppEnv == "production" || e.Config().AppEnv == "prod" || e.Config().AppEnv == ""
 }
 
 func (e *Env) IsLocal() bool {
