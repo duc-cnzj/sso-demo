@@ -65,7 +65,7 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 
 	webApiGroup := router.Group("/api", webAuthMiddleware.ApiMiddleware(env))
 	{
-		webApiAuth := apiWebAuth.New(env)
+		webApiAuth := apiWebAuth.NewAuthController(env)
 		webApiGroup.POST("/user/info", webApiAuth.Info)
 		webApiGroup.POST("/user/info/projects/:project", webApiAuth.Info)
 		webApiGroup.POST("/logout", webApiAuth.Logout)

@@ -14,13 +14,13 @@ type LoginForm struct {
 	Password string `form:"password" json:"password" binding:"required"`
 }
 
-func New(env *env.Env) *authController {
-	return &authController{env: env, AllRepo: api.NewAllRepo(env)}
-}
-
 type authController struct {
 	env *env.Env
 	*api.AllRepo
+}
+
+func NewAuthController(env *env.Env) *authController {
+	return &authController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 func (auth *authController) Logout(c *gin.Context) {
