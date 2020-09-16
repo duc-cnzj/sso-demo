@@ -27,7 +27,7 @@
           <span>{{ row.user.user_name }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="token" min-width="120px">
+      <el-table-column label="token" min-width="300px">
         <template slot-scope="{row}">
           <span style="cursor: pointer;" v-text="row.api_token" />
         </template>
