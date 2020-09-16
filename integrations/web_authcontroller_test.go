@@ -10,9 +10,43 @@ import (
 func TestAuthController_Info(t *testing.T) {
 	tests.WarpTxRollback(s, func() {
 		user := tests.NewUser(nil)
+		role := &models.Role{
+			Name: "admin",
+		}
+		p1 := &models.Permission{
+			Name:    "view",
+			Project: "sso",
+		}
+		p2 := &models.Permission{
+			Name:    "new",
+			Project: "sso",
+		}
+		p3 := &models.Permission{
+			Name:    "view",
+			Project: "micro",
+		}
+		p4 := &models.Permission{
+			Name:    "delete",
+			Project: "micro",
+		}
+		p5 := &models.Permission{
+			Name:    "delete",
+			Project: "micro",
+		}
+		repos.RoleRepo.Create(role)
+		repos.PermRepo.Create(p1)
+		repos.PermRepo.Create(p2)
+		repos.PermRepo.Create(p3)
+		repos.PermRepo.Create(p4)
+		repos.PermRepo.Create(p5)
+		assert.Equal(t, p5.ID, p4.ID)
+		repos.RoleRepo.SyncPermissions(role, []uint{p1.ID, p2.ID, p3.ID, p4.ID}, nil)
 		token := repos.UserRepo.GenerateApiToken(user)
-		w := tests.WebPostJson("/api/user/info", nil, token)
+		repos.UserRepo.SyncRoles(user, []*models.Role{role})
+		w := tests.WebPostJson("/api/user/info/projects/micro", nil, token)
 		assert.Equal(t, 200, w.Code)
+		t.Log(w.Body.String())
+		w = tests.WebPostJson("/api/user/info", nil, token)
 		t.Log(w.Body.String())
 	})
 }

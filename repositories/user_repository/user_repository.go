@@ -30,6 +30,7 @@ type UserRepositoryImp interface {
 	SyncPermissions(*models.User, []interface{}) error
 	UpdateLastLoginAt(*models.User)
 	FindWithRoles(int) (*models.User, error)
+	LoadUserRoleAndPermissionPretty(*models.User, string) (interface{}, error)
 }
 
 type UserRepository struct {
@@ -224,6 +225,62 @@ func (repo *UserRepository) FindWithRoles(id int) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (repo *UserRepository) LoadUserRoleAndPermissionPretty(user *models.User, project string) (interface{}, error) {
+	type permStruct struct {
+		Project string `json:"project"`
+		Name    string `json:"name"`
+	}
+	type result struct {
+		ID          uint         `json:"id"`
+		UserName    string       `json:"user_name"`
+		Email       string       `json:"email"`
+		CreatedAt   time.Time    `json:"created_at"`
+		UpdatedAt   time.Time    `json:"updated_at"`
+		Roles       []string     `json:"roles"`
+		Permissions []permStruct `json:"permissions"`
+	}
+
+	var cond []interface{}
+	if project != "" {
+		cond = []interface{}{
+			"permissions.project = (?)", project,
+		}
+	}
+
+	if err := repo.env.GetDB().Preload("Roles.Permissions", cond...).Preload("Permissions", cond...).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	var res = &result{
+		ID:          user.ID,
+		UserName:    user.UserName,
+		Email:       user.Email,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Roles:       make([]string, 0),
+		Permissions: make([]permStruct, 0),
+	}
+
+	for _, role := range user.Roles {
+		res.Roles = append(res.Roles, role.Name)
+		for _, permission := range role.Permissions {
+			res.Permissions = append(res.Permissions, permStruct{
+				Project: permission.Project,
+				Name:    permission.Name,
+			})
+		}
+	}
+
+	for _, p := range user.Permissions {
+		res.Permissions = append(res.Permissions, permStruct{
+			Project: p.Project,
+			Name:    p.Name,
+		})
+	}
+
+	return res, nil
 }
 
 func toRoleInterfaceSlice(slice interface{}) []interface{} {

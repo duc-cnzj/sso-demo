@@ -194,10 +194,12 @@ func (p *PermissionController) Update(c *gin.Context) {
 func (p *PermissionController) Destroy(c *gin.Context) {
 	var uri Uri
 	if err := c.ShouldBindUri(&uri); err != nil {
+		c.AbortWithError(500, err)
 		return
 	}
 
 	r, _ := p.PermRepo.FindById(uri.Permission)
+
 	if r == nil {
 		exception.ModelNotFound(c, "Permission")
 		return

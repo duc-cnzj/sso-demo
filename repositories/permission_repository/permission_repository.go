@@ -1,6 +1,8 @@
 package permission_repository
 
 import (
+	"errors"
+	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"sso/app/models"
 	"sso/config/env"
@@ -56,8 +58,13 @@ func (repo *PermissionRepository) FindByName(name string) (*models.Permission, e
 }
 
 func (repo *PermissionRepository) Create(permission *models.Permission) error {
-	if err := repo.env.GetDB().Create(permission).Error; err != nil {
-		return err
+	var p = &models.Permission{}
+	if err := repo.env.GetDB().First(p, "name = ? AND project = ?", permission.Name, permission.Project).Error; err != nil && errors.Is(gorm.ErrRecordNotFound, err) {
+		if err := repo.env.GetDB().Create(permission).Error; err != nil {
+			return err
+		}
+	} else {
+		*permission = *p
 	}
 
 	return nil

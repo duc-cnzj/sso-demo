@@ -67,6 +67,7 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 	{
 		webApiAuth := apiWebAuth.New(env)
 		webApiGroup.POST("/user/info", webApiAuth.Info)
+		webApiGroup.POST("/user/info/projects/:project", webApiAuth.Info)
 		webApiGroup.POST("/logout", webApiAuth.Logout)
 	}
 

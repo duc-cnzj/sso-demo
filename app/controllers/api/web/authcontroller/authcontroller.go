@@ -34,14 +34,29 @@ func (auth *authController) Logout(c *gin.Context) {
 }
 
 func (auth *authController) Info(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	user := userCtx.(*models.User)
-	if err := auth.env.GetDB().Preload("Roles.Permissions").First(&user).Error; err != nil {
+	type Uri struct {
+		Project string `json:"project" uri:"project"`
+	}
+
+	var (
+		data       interface{}
+		err        error
+		userCtx, _ = c.Get("user")
+		user       = userCtx.(*models.User)
+		uri        = &Uri{}
+	)
+
+	if err := c.ShouldBindUri(uri); err != nil {
+		log.Error().Err(err).Msg("authController.Info")
+		return
+	}
+
+	if data, err = auth.UserRepo.LoadUserRoleAndPermissionPretty(user, uri.Project); err != nil {
 		log.Fatal().Err(err).Msg("authController.Info")
 		c.AbortWithError(500, errors.New("internal error"))
 
 		return
 	}
 
-	c.JSON(200, gin.H{"data": user})
+	c.JSON(200, gin.H{"data": data})
 }
