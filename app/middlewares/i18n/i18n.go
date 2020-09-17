@@ -15,7 +15,7 @@ func I18nMiddleware(env *env.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var locate = c.GetHeader("I18n-Language")
 		if locate == "" {
-			locate = "en"
+			locate = "zh"
 		}
 
 		switch locate {

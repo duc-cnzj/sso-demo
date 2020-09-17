@@ -14,6 +14,7 @@ type RoleRepositoryImp interface {
 	FindByName(string) (*models.Role, error)
 	FindByIdWithPermissions(uint) (*models.Role, error)
 	Create(*models.Role) error
+	CreateWithPermissionIds(*models.Role, []uint) error
 	SyncPermissions(*models.Role, []uint, *gorm.DB) error
 }
 
@@ -74,6 +75,24 @@ func (repo *RoleRepository) FindByIdWithPermissions(id uint) (*models.Role, erro
 
 func (repo *RoleRepository) Create(r *models.Role) error {
 	if err := repo.env.GetDB().Create(r).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+func (repo *RoleRepository) CreateWithPermissionIds(r *models.Role, permissionIds []uint) error {
+	err := repo.env.DBTransaction(func(tx *gorm.DB) error {
+		if err := tx.Create(r).Error; err != nil {
+			return err
+		}
+
+		if err := repo.SyncPermissions(r, permissionIds, tx); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 

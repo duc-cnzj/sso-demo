@@ -30,6 +30,7 @@ func TestRoleController_Store(t *testing.T) {
 				token: "",
 				body: map[string]string{
 					"name": "role",
+					"text": "update",
 				},
 				code: 401,
 			},
@@ -37,6 +38,7 @@ func TestRoleController_Store(t *testing.T) {
 				name: "success",
 				body: map[string]string{
 					"name": "role",
+					"text": "update",
 				},
 				token: token,
 				code:  201,
@@ -100,6 +102,7 @@ func TestRoleController_Update(t *testing.T) {
 
 		r := &models.Role{
 			Name: "sso",
+			Text: "text",
 		}
 		repos.RoleRepo.Create(r)
 		id := strconv.Itoa(int(r.ID))
@@ -123,6 +126,7 @@ func TestRoleController_Update(t *testing.T) {
 				token: token,
 				body: map[string]string{
 					"name": "update",
+					"text": "update",
 				},
 				code: 200,
 				res:  "update",

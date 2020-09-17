@@ -28,6 +28,11 @@
       </el-table-column>
       <el-table-column label="角色名" min-width="120px">
         <template slot-scope="{row}">
+          <span>{{ row.text }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="角色" min-width="120px">
+        <template slot-scope="{row}">
           <span>{{ row.name }}</span>
         </template>
       </el-table-column>
@@ -68,7 +73,10 @@
     />
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="90px" style="width: 80%; margin-left:50px;">
-        <el-form-item label="角色名称" prop="name">
+        <el-form-item label="角色名" prop="text">
+          <el-input v-model="temp.text" />
+        </el-form-item>
+        <el-form-item label="角色" prop="name">
           <el-input v-model="temp.name" />
         </el-form-item>
         <el-form-item label="角色权限" prop="name">
@@ -143,6 +151,7 @@ export default {
       temp: {
         id: null,
         name: null,
+        text: null,
         permissions: []
       },
       dialogFormVisible: false,
@@ -154,7 +163,8 @@ export default {
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        name: [{ required: true, message: '角色名称必填', trigger: 'change' }]
+        text: [{ required: true, message: '角色名称必填', trigger: 'change' }],
+        name: [{ required: true, message: '角色格式必须为 a-z', trigger: 'change', pattern: /^[a-z]+$/ }]
       }
     }
   },
@@ -254,6 +264,7 @@ export default {
         if (valid) {
           store({
             name: this.temp.name,
+            text: this.temp.text,
             permission_ids: this.temp.permissions
           }).then(res => {
             this.list.unshift(res.data)
@@ -271,6 +282,7 @@ export default {
       await this.getPermissions()
       this.temp.id = row.id
       this.temp.name = row.name
+      this.temp.text = row.text
       this.temp.permissions = row.permissions ? row.permissions.map(item => {
         return item.id
       }) : []
@@ -285,6 +297,7 @@ export default {
         if (valid) {
           update(this.temp.id, {
             name: this.temp.name,
+            text: this.temp.text,
             permission_ids: this.temp.permissions
           }).then(({ data }) => {
             this.getList()

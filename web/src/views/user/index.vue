@@ -44,7 +44,7 @@
               width="100%"
               trigger="hover"
             >
-              <el-tag slot="reference" type="success" v-text="r.name" />
+              <el-tag slot="reference" type="success" v-text="r.text" />
               <template v-if="getPermissionName(r.permissions)!==null">
                 <el-tag v-for="name in getPermissionName(r.permissions)" :key="name" style="margin-right: 5px;">
                   {{ name }}
@@ -130,7 +130,7 @@
             <el-option
               v-for="item in temp.roles"
               :key="item.id"
-              :label="item.name"
+              :label="item.text"
               :value="item.id"
             />
           </el-select>

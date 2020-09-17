@@ -7,7 +7,8 @@ import (
 type Role struct {
 	ID uint `gorm:"primary_key" json:"id"`
 
-	Name string `gorm:"type:varchar(100);unique_index;not null;" json:"name"`
+	Text string `gorm:"type:varchar(100);not null;" json:"text"`
+	Name string `gorm:"type:varchar(50);unique_index;not null;" json:"name"`
 
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`

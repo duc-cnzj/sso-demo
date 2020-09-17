@@ -23,12 +23,14 @@ type QueryInput struct {
 }
 
 type RoleStoreInput struct {
-	Name          string `form:"name" json:"name"`
+	Text          string `form:"text" json:"text" binding:"required"`
+	Name          string `form:"name" json:"name" binding:"required,alpha"`
 	PermissionIds []uint `form:"permission_ids" json:"permission_ids"`
 }
 
 type RoleUpdateInput struct {
-	Name          string `form:"name" json:"name"`
+	Text          string `form:"text" json:"text" binding:"required"`
+	Name          string `form:"name" json:"name" binding:"required,alpha"`
 	PermissionIds []uint `form:"permission_ids" json:"permission_ids"`
 }
 
@@ -120,22 +122,13 @@ func (role *RoleController) Store(ctx *gin.Context) {
 
 	r := &models.Role{
 		Name: input.Name,
+		Text: input.Text,
 	}
 
-	if err := role.env.DBTransaction(func(tx *gorm.DB) error {
-		if err := tx.Create(r).Error; err != nil {
-			return err
-		}
-
-		if err := role.RoleRepo.SyncPermissions(r, input.PermissionIds, tx); err != nil {
-			log.Error().Err(err).Msg("RoleController.Store")
-
-			return err
-		}
-
-		return nil
-	}); err != nil {
-		log.Error().Err(err).Msg("RoleController.Store")
+	err := role.RoleRepo.CreateWithPermissionIds(r, input.PermissionIds)
+	if err != nil {
+		log.Error().Err(err).Msg("role.RoleRepo.CreateWithPermissionIds")
+		ctx.AbortWithError(500, err)
 		return
 	}
 
@@ -197,8 +190,9 @@ func (role *RoleController) Update(ctx *gin.Context) {
 		}
 		log.Debug().Interface("input", input).Msg("RoleController.Update")
 	}
+
 	role.env.DBTransaction(func(tx *gorm.DB) error {
-		if e := tx.Model(r).Updates(map[string]interface{}{"name": input.Name}).Error; e != nil {
+		if e := tx.Model(r).Updates(map[string]interface{}{"name": input.Name, "text": input.Text}).Error; e != nil {
 			log.Error().Err(e).Msg("RoleController.Update")
 			return e
 		}
@@ -247,16 +241,16 @@ func (role *RoleController) Destroy(ctx *gin.Context) {
 func (role *RoleController) All(c *gin.Context) {
 	type res struct {
 		ID   uint   `json:"id"`
-		Name string `json:"name"`
+		Text string `json:"text"`
 	}
 	var roles []*models.Role
 	var result []res
 
-	role.env.GetDB().Select([]string{"name", "id"}).Find(&roles)
+	role.env.GetDB().Select([]string{"id", "text"}).Find(&roles)
 	for _, v := range roles {
 		result = append(result, res{
 			ID:   v.ID,
-			Name: v.Name,
+			Text: v.Text,
 		})
 	}
 
