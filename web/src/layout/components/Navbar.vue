@@ -7,7 +7,7 @@
     <div class="right-menu">
       <el-dropdown class="avatar-container" trigger="click">
         <div class="avatar-wrapper">
-          <img :src="avatar+'?imageView2/1/w/80/h/80'" class="user-avatar">
+          <img :src="getAvatar" class="user-avatar">
           <i class="el-icon-caret-bottom" />
         </div>
         <el-dropdown-menu slot="dropdown" class="user-dropdown">
@@ -26,6 +26,7 @@
 </template>
 
 <script>
+import { randomSetAvatar } from '@/utils/avatar'
 import { mapGetters } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
@@ -35,11 +36,19 @@ export default {
     Breadcrumb,
     Hamburger
   },
+  data() {
+    return {
+      avatarRange: [1, 10]
+    }
+  },
   computed: {
     ...mapGetters([
       'sidebar',
       'avatar'
-    ])
+    ]),
+    getAvatar() {
+      return randomSetAvatar()
+    }
   },
   methods: {
     toggleSideBar() {

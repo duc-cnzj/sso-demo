@@ -8,9 +8,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"sso/app/models"
 	"sso/config/env"
+	"sso/repositories/role_repositories"
 	"sso/utils/helper"
 	"time"
 )
+
+type UserWithRBAC struct {
+	ID          uint         `json:"id"`
+	UserName    string       `json:"user_name"`
+	Email       string       `json:"email"`
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   time.Time    `json:"updated_at"`
+	Roles       []string     `json:"roles"`
+	Permissions []string `json:"permissions"`
+}
 
 var (
 	ErrorTokenExpired = errors.New("token expired")
@@ -21,7 +32,7 @@ type UserRepositoryImp interface {
 	GeneratePwd(string) (string, error)
 	Create(*models.User) error
 	FindById(uint) (*models.User, error)
-	SyncRoles(*models.User, []*models.Role) error
+	SyncRoles(*models.User, []uint) error
 	ForceLogout(*models.User)
 	GenerateApiToken(*models.User) string
 	GenerateLogoutToken(*models.User)
@@ -29,8 +40,8 @@ type UserRepositoryImp interface {
 	FindByToken(string, bool) (*models.User, error)
 	SyncPermissions(*models.User, []interface{}) error
 	UpdateLastLoginAt(*models.User)
-	FindWithRoles(int) (*models.User, error)
-	LoadUserRoleAndPermissionPretty(*models.User, string) (interface{}, error)
+	FindWithRoles(uint) (*models.User, error)
+	LoadUserRoleAndPermissionPretty(*models.User, string) (*UserWithRBAC, error)
 }
 
 type UserRepository struct {
@@ -84,8 +95,11 @@ func (repo *UserRepository) FindById(id uint) (*models.User, error) {
 	return user, nil
 }
 
-func (repo *UserRepository) SyncRoles(user *models.User, roles []*models.Role) error {
+func (repo *UserRepository) SyncRoles(user *models.User, roleIds []uint) error {
 	return repo.env.DBTransaction(func(tx *gorm.DB) error {
+		roleRepo := role_repositories.NewRoleRepository(repo.env)
+		roles, _ := roleRepo.FindByIds(roleIds)
+
 		if tx.Model(user).Association("Roles").Clear().Error != nil {
 			return tx.Model(user).Association("Roles").Clear().Error
 		}
@@ -216,7 +230,7 @@ func (repo *UserRepository) UpdateLastLoginAt(user *models.User) {
 	repo.env.GetDB().Model(user).Updates(map[string]interface{}{"last_login_at": time.Now()})
 }
 
-func (repo *UserRepository) FindWithRoles(id int) (*models.User, error) {
+func (repo *UserRepository) FindWithRoles(id uint) (*models.User, error) {
 	user := &models.User{}
 
 	if err := repo.env.GetDB().Preload("Roles").Where("id = ?", id).First(user).Error; err != nil {
@@ -227,21 +241,7 @@ func (repo *UserRepository) FindWithRoles(id int) (*models.User, error) {
 	return user, nil
 }
 
-func (repo *UserRepository) LoadUserRoleAndPermissionPretty(user *models.User, project string) (interface{}, error) {
-	type permStruct struct {
-		Project string `json:"project"`
-		Name    string `json:"name"`
-	}
-	type result struct {
-		ID          uint         `json:"id"`
-		UserName    string       `json:"user_name"`
-		Email       string       `json:"email"`
-		CreatedAt   time.Time    `json:"created_at"`
-		UpdatedAt   time.Time    `json:"updated_at"`
-		Roles       []string     `json:"roles"`
-		Permissions []permStruct `json:"permissions"`
-	}
-
+func (repo *UserRepository) LoadUserRoleAndPermissionPretty(user *models.User, project string) (*UserWithRBAC, error) {
 	var cond []interface{}
 	if project != "" {
 		cond = []interface{}{
@@ -253,31 +253,25 @@ func (repo *UserRepository) LoadUserRoleAndPermissionPretty(user *models.User, p
 		return nil, err
 	}
 
-	var res = &result{
+	var res = &UserWithRBAC{
 		ID:          user.ID,
 		UserName:    user.UserName,
 		Email:       user.Email,
 		CreatedAt:   user.CreatedAt,
 		UpdatedAt:   user.UpdatedAt,
 		Roles:       make([]string, 0),
-		Permissions: make([]permStruct, 0),
+		Permissions: make([]string, 0),
 	}
 
 	for _, role := range user.Roles {
 		res.Roles = append(res.Roles, role.Name)
 		for _, permission := range role.Permissions {
-			res.Permissions = append(res.Permissions, permStruct{
-				Project: permission.Project,
-				Name:    permission.Name,
-			})
+			res.Permissions = append(res.Permissions, permission.Name)
 		}
 	}
 
 	for _, p := range user.Permissions {
-		res.Permissions = append(res.Permissions, permStruct{
-			Project: p.Project,
-			Name:    p.Name,
-		})
+		res.Permissions = append(res.Permissions, p.Name)
 	}
 
 	return res, nil

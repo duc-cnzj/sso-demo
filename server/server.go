@@ -71,6 +71,7 @@ func (s *Server) Init(configPath, rootPath string) error {
 	enLang := en.New()
 	uni := ut.New(enLang, zhLang, enLang)
 
+
 	s.env = env.NewEnv(
 		s.config,
 		s.db,
@@ -101,7 +102,6 @@ func (s *Server) Init(configPath, rootPath string) error {
 	}
 
 	r := gin.New()
-
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("slug", func(fl validator.FieldLevel) bool {

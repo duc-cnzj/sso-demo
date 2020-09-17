@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"sso/app/models"
 	"sso/config/env"
+	"sso/repositories/user_repository"
 	"strconv"
 	"strings"
 	"time"
@@ -37,6 +38,12 @@ func AuthMiddleware(env *env.Env) gin.HandlerFunc {
 
 			if claims, ok := t.Claims.(*SsoJwtClaims); ok && t.Valid {
 				log.Debug().Interface("t", claims).Msg("jwt.AuthMiddleware")
+				userRepo := user_repository.NewUserRepository(env)
+				pretty, _ := userRepo.LoadUserRoleAndPermissionPretty(claims.User, "sso")
+				claims.User.CurrentRoles = pretty.Roles
+				claims.User.CurrentRoles = pretty.Permissions
+
+				env.Auth().SetUser(claims.User)
 				c.Set("user", claims.User)
 				c.Next()
 				return

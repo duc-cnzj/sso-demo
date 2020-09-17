@@ -76,11 +76,18 @@ func TestLogin(t *testing.T) {
 
 		pwd, _ := repos.UserRepo.GeneratePwd("12345")
 
-		s.Env().GetDB().Create(&models.User{
+		user := &models.User{
 			UserName: "jack",
 			Email:    "jack@qq.com",
 			Password: pwd,
-		})
+		}
+		role := &models.Role{
+			Text:        "sso",
+			Name:        "sso",
+		}
+		s.Env().GetDB().Create(user)
+		repos.RoleRepo.Create(role)
+		repos.UserRepo.SyncRoles(user, []uint{role.ID})
 
 		for _, tt := range data {
 			t.Run(tt.name, func(t *testing.T) {

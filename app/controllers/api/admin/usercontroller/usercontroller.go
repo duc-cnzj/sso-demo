@@ -251,13 +251,11 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 		return
 	}
 
-	roleByIds, err := user.RoleRepo.FindByIds(input.RoleIds)
-
-	if err := user.UserRepo.SyncRoles(byId, roleByIds); err != nil {
+	if err := user.UserRepo.SyncRoles(byId, input.RoleIds); err != nil {
 		log.Panic().Err(err).Msg("UserController.SyncRoles")
 	}
 
-	roles, _ := user.UserRepo.FindWithRoles(id)
+	roles, _ := user.UserRepo.FindWithRoles(uint(id))
 
 	ctx.JSON(200, gin.H{"data": roles})
 }

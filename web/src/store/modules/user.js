@@ -2,6 +2,7 @@
 import { login, userInfo, logout } from '@/api/auth'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import { resetRouter } from '@/router'
+import { removeAvatar } from '@/utils/avatar'
 
 const getDefaultState = () => {
   return {
@@ -99,6 +100,7 @@ const actions = {
       logout(state.token).then(() => {
         removeToken() // must remove  token  first
         resetRouter()
+        removeAvatar()
         commit('RESET_STATE')
         resolve()
       }).catch(error => {

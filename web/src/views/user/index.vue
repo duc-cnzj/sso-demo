@@ -46,7 +46,7 @@
             >
               <el-tag slot="reference" type="success" v-text="r.text" />
               <template v-if="getPermissionName(r.permissions)!==null">
-                <el-tag v-for="name in getPermissionName(r.permissions)" :key="name" style="margin-right: 5px;">
+                <el-tag v-for="(name, index) in getPermissionName(r.permissions)" :key="index" style="margin-right: 5px;">
                   {{ name }}
                 </el-tag>
               </template>

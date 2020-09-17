@@ -63,6 +63,15 @@ func (auth *authController) Login(ctx *gin.Context) {
 	}
 
 	auth.UserRepo.UpdateLastLoginAt(user)
+	pretty, _ := auth.UserRepo.LoadUserRoleAndPermissionPretty(user, "sso")
+	user.CurrentRoles = pretty.Roles
+	user.CurrentPermissions = pretty.Permissions
+	auth.env.Auth().SetUser(user)
+
+	if !auth.env.Auth().HasRole("sso") {
+		ctx.JSON(403, gin.H{"code": 403, "msg": "Forbidden!"})
+		return
+	}
 
 	token, err = jwt.GenerateToken(user, auth.env)
 	if err != nil {

@@ -63,9 +63,7 @@ service.interceptors.response.use(
           })
         }
       }
-    }
-
-    if (error.response.status === 401) {
+    } else if (error.response.status === 401) {
       const token = getToken()
       if (token) {
         Message.error('登陆过期，请重新登陆')
@@ -74,6 +72,8 @@ service.interceptors.response.use(
         Message.error('用户名或者密码错误')
       }
       router.push({ name: 'login' })
+    } else {
+      Message.error(error.response.data.msg)
     }
 
     return Promise.reject(error)

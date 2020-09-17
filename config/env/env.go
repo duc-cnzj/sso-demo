@@ -6,6 +6,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
+	"sso/app/auth"
 	"sync"
 )
 
@@ -43,6 +44,15 @@ type Env struct {
 	config       *Config
 	rootDir      string
 	mu           *sync.Mutex
+	auth         *auth.Auth
+}
+
+func (e *Env) SetAuth(auth *auth.Auth) {
+	e.auth = auth
+}
+
+func (e *Env) Auth() *auth.Auth {
+	return e.auth
 }
 
 func (e *Env) SetDB(db *gorm.DB) {
@@ -86,6 +96,7 @@ func NewEnv(config *Config, db *gorm.DB, sessionStore sessions.Store, pool *redi
 		redisPool:    pool,
 		config:       config,
 		mu:           &sync.Mutex{},
+		auth: auth.NewAuth(nil),
 	}
 	for _, op := range envOperators {
 		op(env)
@@ -97,6 +108,12 @@ func NewEnv(config *Config, db *gorm.DB, sessionStore sessions.Store, pool *redi
 func WithUniversalTranslator(t *ut.UniversalTranslator) func(env *Env) {
 	return func(env *Env) {
 		env.translator = t
+	}
+}
+
+func WithAuth(auth *auth.Auth) func(env *Env) {
+	return func(env *Env) {
+		env.auth = auth
 	}
 }
 

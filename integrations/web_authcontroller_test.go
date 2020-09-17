@@ -42,7 +42,7 @@ func TestAuthController_Info(t *testing.T) {
 		assert.Equal(t, p5.ID, p4.ID)
 		repos.RoleRepo.SyncPermissions(role, []uint{p1.ID, p2.ID, p3.ID, p4.ID}, nil)
 		token := repos.UserRepo.GenerateApiToken(user)
-		repos.UserRepo.SyncRoles(user, []*models.Role{role})
+		repos.UserRepo.SyncRoles(user, []uint{role.ID})
 		w := tests.WebPostJson("/api/user/info/projects/micro", nil, token)
 		assert.Equal(t, 200, w.Code)
 		t.Log(w.Body.String())
