@@ -14,13 +14,13 @@ import (
 )
 
 type UserWithRBAC struct {
-	ID          uint         `json:"id"`
-	UserName    string       `json:"user_name"`
-	Email       string       `json:"email"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
-	Roles       []string     `json:"roles"`
-	Permissions []string `json:"permissions"`
+	ID          uint      `json:"id"`
+	UserName    string    `json:"user_name"`
+	Email       string    `json:"email"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Roles       []string  `json:"roles"`
+	Permissions []string  `json:"permissions"`
 }
 
 var (

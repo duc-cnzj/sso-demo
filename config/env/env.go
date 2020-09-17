@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
 	"sso/app/auth"
+	"sso/app/models"
 	"sync"
 )
 
@@ -96,7 +97,7 @@ func NewEnv(config *Config, db *gorm.DB, sessionStore sessions.Store, pool *redi
 		redisPool:    pool,
 		config:       config,
 		mu:           &sync.Mutex{},
-		auth: auth.NewAuth(nil),
+		auth:         auth.NewAuth(&models.User{}),
 	}
 	for _, op := range envOperators {
 		op(env)

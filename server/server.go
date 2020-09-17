@@ -71,7 +71,6 @@ func (s *Server) Init(configPath, rootPath string) error {
 	enLang := en.New()
 	uni := ut.New(enLang, zhLang, enLang)
 
-
 	s.env = env.NewEnv(
 		s.config,
 		s.db,

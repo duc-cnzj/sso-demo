@@ -82,8 +82,8 @@ func TestLogin(t *testing.T) {
 			Password: pwd,
 		}
 		role := &models.Role{
-			Text:        "sso",
-			Name:        "sso",
+			Text: "sso",
+			Name: "sso",
 		}
 		s.Env().GetDB().Create(user)
 		repos.RoleRepo.Create(role)
