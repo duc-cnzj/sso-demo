@@ -41,7 +41,7 @@ func AuthMiddleware(env *env.Env) gin.HandlerFunc {
 				userRepo := user_repository.NewUserRepository(env)
 				pretty, _ := userRepo.LoadUserRoleAndPermissionPretty(claims.User, "sso")
 				claims.User.CurrentRoles = pretty.Roles
-				claims.User.CurrentRoles = pretty.Permissions
+				claims.User.CurrentPermissions = pretty.Permissions
 
 				env.Auth().SetUser(claims.User)
 				c.Set("user", claims.User)

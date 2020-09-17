@@ -14,13 +14,13 @@ import (
 )
 
 type UserWithRBAC struct {
-	ID          uint      `json:"id"`
-	UserName    string    `json:"user_name"`
-	Email       string    `json:"email"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Roles       []string  `json:"roles"`
-	Permissions []string  `json:"permissions"`
+	ID          uint                `json:"id"`
+	UserName    string              `json:"user_name"`
+	Email       string              `json:"email"`
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
+	Roles       []string            `json:"roles"`
+	Permissions []models.SimplePerm `json:"permissions"`
 }
 
 var (
@@ -260,18 +260,24 @@ func (repo *UserRepository) LoadUserRoleAndPermissionPretty(user *models.User, p
 		CreatedAt:   user.CreatedAt,
 		UpdatedAt:   user.UpdatedAt,
 		Roles:       make([]string, 0),
-		Permissions: make([]string, 0),
+		Permissions: make([]models.SimplePerm, 0),
 	}
 
 	for _, role := range user.Roles {
 		res.Roles = append(res.Roles, role.Name)
 		for _, permission := range role.Permissions {
-			res.Permissions = append(res.Permissions, permission.Name)
+			res.Permissions = append(res.Permissions, models.SimplePerm{
+				Project: permission.Project,
+				Name:    permission.Name,
+			})
 		}
 	}
 
 	for _, p := range user.Permissions {
-		res.Permissions = append(res.Permissions, p.Name)
+		res.Permissions = append(res.Permissions, models.SimplePerm{
+			Project: p.Project,
+			Name:    p.Name,
+		})
 	}
 
 	return res, nil

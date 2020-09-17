@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+type SimplePerm struct {
+	Project string
+	Name    string
+}
+
 type User struct {
 	ID          uint       `gorm:"primary_key" json:"id"`
 	UserName    string     `gorm:"type:varchar(255);not null" json:"user_name"`
@@ -19,8 +24,8 @@ type User struct {
 	Roles       []Role       `gorm:"many2many:user_role;" json:"roles"`
 	ApiTokens   []ApiToken   `json:"api_tokens"`
 
-	CurrentRoles       []string `gorm:"-" json:"-"`
-	CurrentPermissions []string `gorm:"-" json:"-"`
+	CurrentRoles       []string     `gorm:"-" json:"-"`
+	CurrentPermissions []SimplePerm `gorm:"-" json:"-"`
 }
 
 func (User) TableName() string {

@@ -16,9 +16,9 @@ func (auth *Auth) SetUser(user *models.User) {
 	auth.user = user
 }
 
-func (auth *Auth) HasPermission(name string) bool {
+func (auth *Auth) HasPermission(name, project string) bool {
 	for _, perm := range auth.user.CurrentPermissions {
-		if perm == name {
+		if perm.Name == name && perm.Project == project {
 			return true
 		}
 	}
