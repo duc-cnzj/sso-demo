@@ -23,13 +23,15 @@ type Uri struct {
 }
 
 type StoreInput struct {
-	Name    string `form:"name" json:"name"`
-	Project string `form:"project" json:"project"`
+	Text    string `form:"text" json:"text" binding:"required"`
+	Name    string `form:"name" json:"name" binding:"required,slug"`
+	Project string `form:"project" json:"project" binding:"required"`
 }
 
 type UpdateInput struct {
-	Name    string `form:"name" json:"name"`
-	Project string `form:"project" json:"project"`
+	Text    string `form:"text" json:"text" binding:"required"`
+	Name    string `form:"name" json:"name" binding:"required,slug"`
+	Project string `form:"project" json:"project" binding:"required"`
 }
 
 type QueryInput struct {
@@ -129,6 +131,7 @@ func (p *PermissionController) Store(c *gin.Context) {
 	pnew := &models.Permission{
 		Name:    input.Name,
 		Project: input.Project,
+		Text:    input.Text,
 	}
 	if err := p.PermRepo.Create(pnew); err != nil {
 		log.Fatal().Err(err).Msg("")
@@ -158,6 +161,7 @@ func (p *PermissionController) Update(c *gin.Context) {
 		uri   Uri
 	)
 	if err := c.ShouldBindUri(&uri); err != nil {
+		exception.ValidateException(c, err, p.env)
 		return
 	}
 	if err := c.ShouldBind(&input); err != nil {
@@ -183,7 +187,7 @@ func (p *PermissionController) Update(c *gin.Context) {
 	}
 
 	e := p.env.GetDB().Model(permission).Updates(map[string]interface{}{
-		"name": input.Name, "project": input.Project,
+		"name": input.Name, "project": input.Project, "text": input.Text,
 	})
 	if e.Error != nil {
 		log.Panic().Msg(e.Error.Error())
@@ -223,7 +227,7 @@ func (p *PermissionController) GetByGroups(c *gin.Context) {
 	var permissions []models.Permission
 
 	type Item struct {
-		Name string `json:"name"`
+		Text string `json:"text"`
 		Id   uint   `json:"id"`
 	}
 	var groups = make(map[string][]Item)
@@ -234,13 +238,13 @@ func (p *PermissionController) GetByGroups(c *gin.Context) {
 	for _, permission := range permissions {
 		if items, ok := groups[permission.Project]; ok {
 			groups[permission.Project] = append(items, Item{
-				Name: permission.Name,
+				Text: permission.Text,
 				Id:   permission.ID,
 			})
 		} else {
 			groups[permission.Project] = []Item{
 				{
-					Name: permission.Name,
+					Text: permission.Text,
 					Id:   permission.ID,
 				}}
 		}

@@ -234,7 +234,7 @@ export default {
     },
     getPermissionName(data) {
       if (data && data.length > 0) {
-        const res = data.map(item => `${item.project}.${item.name}`)
+        const res = data.map(item => `${item.project}.${item.text}`)
         return res || null
       }
 

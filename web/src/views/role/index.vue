@@ -39,7 +39,7 @@
       <el-table-column label="权限" min-width="350px">
         <template slot-scope="{row}">
           <span v-for="premission in row.permissions" :key="premission.id" style="margin-right: 5px">
-            <el-tag style="margin-bottom: 5px" v-text="`${premission.project}.${premission.name}`" />
+            <el-tag style="margin-bottom: 5px" v-text="`${premission.project}.${premission.text}`" />
           </span>
         </template>
       </el-table-column>
@@ -164,7 +164,7 @@ export default {
       pvData: [],
       rules: {
         text: [{ required: true, message: '角色名称必填', trigger: 'change' }],
-        name: [{ required: true, message: '角色格式必须为 a-z', trigger: 'change', pattern: /^[a-z]+$/ }]
+        name: [{ required: true, message: '角色格式必须为 a-z', trigger: 'change', pattern: /^[a-zA-Z_-]+$/ }]
       }
     }
   },

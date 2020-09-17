@@ -16,12 +16,14 @@ func TestPermissionController_Index(t *testing.T) {
 		p := &models.Permission{
 			Name:    "create",
 			Project: "sso-with-test",
+			Text: "text",
 		}
 		repos.PermRepo.Create(p)
 
 		repos.PermRepo.Create(&models.Permission{
 			Name:    "show",
 			Project: "sso-with-test",
+			Text: "text",
 		})
 
 		data := []struct {
@@ -50,6 +52,7 @@ func TestPermissionController_Index(t *testing.T) {
 				token: token,
 				data: map[string]string{
 					"project": "sso-with-test",
+					"text": "text",
 				},
 				code: 200,
 				res:  `"total":2`,
@@ -90,7 +93,7 @@ func TestPermissionController_Store(t *testing.T) {
 				token: "",
 				data: map[string]string{
 					"name":   "view",
-					"projec": "sso",
+					"project": "sso",
 				},
 				code: 401,
 			},
@@ -98,8 +101,9 @@ func TestPermissionController_Store(t *testing.T) {
 				name:  "success",
 				token: token,
 				data: map[string]string{
+					"text":   "view-text",
 					"name":   "view",
-					"projec": "sso",
+					"project": "sso",
 				},
 				code: 201,
 			},
@@ -108,7 +112,8 @@ func TestPermissionController_Store(t *testing.T) {
 				token: token,
 				data: map[string]string{
 					"name":   "view",
-					"projec": "sso",
+					"project": "sso",
+					"text":   "view-text",
 				},
 				code: 422,
 				res:  "permission exists",
@@ -134,6 +139,7 @@ func TestPermissionController_Show(t *testing.T) {
 		p := &models.Permission{
 			Name:    "create",
 			Project: "sso",
+			Text: "ssotext",
 		}
 		repos.PermRepo.Create(p)
 		id := strconv.Itoa(int(p.ID))
@@ -175,12 +181,14 @@ func TestPermissionController_Update(t *testing.T) {
 		p := &models.Permission{
 			Name:    "create",
 			Project: "sso",
+			Text: "ssotext",
 		}
 		repos.PermRepo.Create(p)
 
 		repos.PermRepo.Create(&models.Permission{
 			Name:    "show",
 			Project: "sso",
+			Text: "ssotext",
 		})
 		id := strconv.Itoa(int(p.ID))
 		data := []struct {
@@ -196,6 +204,7 @@ func TestPermissionController_Update(t *testing.T) {
 				data: map[string]string{
 					"name":    "create-update",
 					"project": "sso-big",
+					"text": "ssotext",
 				},
 				code: 401,
 			},
@@ -205,6 +214,7 @@ func TestPermissionController_Update(t *testing.T) {
 				data: map[string]string{
 					"name":    "create-update",
 					"project": "sso-big",
+					"text": "ssotext",
 				},
 				code: 200,
 			},
@@ -214,6 +224,7 @@ func TestPermissionController_Update(t *testing.T) {
 				data: map[string]string{
 					"name":    "show",
 					"project": "sso-big",
+					"text": "ssotext",
 				},
 				code: 422,
 				res:  "name exists",
@@ -278,11 +289,13 @@ func TestPermissionController_GetByGroups(t *testing.T) {
 		_, token := tests.NewUserWithToken(nil)
 
 		repos.PermRepo.Create(&models.Permission{
+			Text:    "create-text",
 			Name:    "create",
 			Project: "sso",
 		})
 
 		repos.PermRepo.Create(&models.Permission{
+			Text:    "show-text",
 			Name:    "show",
 			Project: "sso",
 		})
@@ -324,11 +337,13 @@ func TestPermissionController_GetPermissionProjects(t *testing.T) {
 		repos.PermRepo.Create(&models.Permission{
 			Name:    "create",
 			Project: "sso",
+			Text:    "create-text",
 		})
 
 		repos.PermRepo.Create(&models.Permission{
 			Name:    "show",
 			Project: "sso",
+			Text:    "show-text",
 		})
 
 		data := []struct {

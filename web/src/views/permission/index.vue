@@ -31,6 +31,11 @@
           <span>{{ row.name }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="唯一标识" min-width="150px">
+        <template slot-scope="{row}">
+          <span>{{ row.text }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="项目" min-width="150px">
         <template slot-scope="{row}">
           <span>{{ row.project }}</span>
@@ -66,7 +71,10 @@
     />
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="90px" style="width: 80%; margin-left:50px;">
-        <el-form-item label="权限名称" prop="name">
+        <el-form-item label="权限名称" prop="text">
+          <el-input v-model="temp.text" />
+        </el-form-item>
+        <el-form-item label="唯一标识" prop="name">
           <el-input v-model="temp.name" />
         </el-form-item>
         <el-form-item label="项目名称" prop="project">
@@ -134,6 +142,7 @@ export default {
       },
       temp: {
         id: null,
+        text: null,
         name: null,
         project: null,
         projects: []
@@ -148,7 +157,8 @@ export default {
       pvData: [],
       rules: {
         name: [{ required: true, message: '权限名称必填', trigger: 'change' }],
-        project: [{ required: true, message: '项目名称必填', trigger: 'change' }]
+        project: [{ required: true, message: '项目名称必填', trigger: 'change' }],
+        text: [{ required: true, message: '唯一标识', trigger: 'change', pattern: /^[a-zA-Z_-]+$/ }]
       }
     }
   },
@@ -253,6 +263,7 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           store({
+            text: this.temp.text,
             name: this.temp.name,
             project: this.temp.project
           }).then(res => {
@@ -269,6 +280,7 @@ export default {
     },
     async handleUpdate(row) {
       await this.getPermissions()
+      await this.getProjectList()
       this.temp.id = row.id
       this.temp.name = row.name
       this.temp.permissions = row.permissions ? row.permissions.map(item => {
@@ -284,7 +296,9 @@ export default {
       this.$refs['dataForm'].validate((valid) => {
         if (valid) {
           update(this.temp.id, {
+            text: this.temp.text,
             name: this.temp.name,
+            project: this.temp.project,
             permission_ids: this.temp.permissions
           }).then(({ data }) => {
             this.getList()

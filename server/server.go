@@ -8,9 +8,11 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
 	_ "github.com/go-sql-driver/mysql"
 	redis2 "github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
@@ -20,6 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"regexp"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/routes"
@@ -98,6 +101,22 @@ func (s *Server) Init(configPath, rootPath string) error {
 	}
 
 	r := gin.New()
+
+
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("slug", func(fl validator.FieldLevel) bool {
+			slug, ok := fl.Field().Interface().(string)
+			if ok {
+				regex := regexp.MustCompile("^[a-zA-Z_-]+$")
+				match := regex.Match([]byte(slug))
+				if match {
+					return true
+				}
+			}
+
+			return false
+		})
+	}
 
 	s.engine = routes.Init(r, s.env)
 

@@ -24,13 +24,13 @@ type QueryInput struct {
 
 type RoleStoreInput struct {
 	Text          string `form:"text" json:"text" binding:"required"`
-	Name          string `form:"name" json:"name" binding:"required,alpha"`
+	Name          string `form:"name" json:"name" binding:"required,slug"`
 	PermissionIds []uint `form:"permission_ids" json:"permission_ids"`
 }
 
 type RoleUpdateInput struct {
 	Text          string `form:"text" json:"text" binding:"required"`
-	Name          string `form:"name" json:"name" binding:"required,alpha"`
+	Name          string `form:"name" json:"name" binding:"required,slug"`
 	PermissionIds []uint `form:"permission_ids" json:"permission_ids"`
 }
 
