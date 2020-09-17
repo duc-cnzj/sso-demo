@@ -121,7 +121,7 @@ export default {
       }).then(response => {
         const { data } = response
         this.total = response.total
-        this.list = data
+        this.list = data.map(item => { item.show = false; return item })
         this.listQuery.page = response.page
         this.listQuery.pageSize = response.page_size
 
