@@ -31,6 +31,7 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 	if !env.IsTesting() {
 		router.Static("/assets", env.RootDir()+"resources/views/web/css")
 		router.Static("/images", env.RootDir()+"resources/views/web/images")
+		router.Static("/avatars", env.RootDir()+"resources/views/admin/avatars")
 
 		router.Static("/static/css", env.RootDir()+"resources/views/admin/static/css")
 		router.Static("/static/fonts", env.RootDir()+"resources/views/admin/static/fonts")
