@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"reflect"
 	"regexp"
 	"sort"
 	"sso/app/models"
@@ -185,10 +186,10 @@ func (v *ValidatorLoader) GetWeight() int {
 	return 10
 }
 
-type EnvDetectLoader struct {
+type EnvironmentLoader struct {
 }
 
-func (e *EnvDetectLoader) Load(s *Server) error {
+func (e *EnvironmentLoader) Load(s *Server) error {
 	if s.env.IsProduction() {
 		s.ProductionMode()
 	}
@@ -200,7 +201,7 @@ func (e *EnvDetectLoader) Load(s *Server) error {
 	return nil
 }
 
-func (e *EnvDetectLoader) GetWeight() int {
+func (e *EnvironmentLoader) GetWeight() int {
 	return 8
 }
 
@@ -213,6 +214,7 @@ type Server struct {
 	redis      *redis2.Pool
 	session    sessions.Store
 	engine     *gin.Engine
+	loaders    LoaderCollection
 }
 
 func (s *Server) Engine() *gin.Engine {
@@ -241,6 +243,7 @@ func (s *Server) Init(configPath, rootPath string) error {
 		&SessionLoader{},
 		&EnvLoader{},
 		&ValidatorLoader{},
+		&EnvironmentLoader{},
 	}
 
 	sort.Sort(loaders)
@@ -251,7 +254,16 @@ func (s *Server) Init(configPath, rootPath string) error {
 		}
 	}
 
+	s.loaders = loaders
+
+	if s.env.IsDebugging() {
+		for _, lo := range s.loaders {
+			log.Debug().Msg(fmt.Sprintf("register loader:%30s => weight: %d", reflect.TypeOf(lo).String(), lo.GetWeight()))
+		}
+	}
+
 	r := gin.New()
+
 	s.engine = routes.Init(r, s.env)
 
 	return nil
@@ -287,12 +299,13 @@ func (s *Server) ProductionMode() {
 }
 
 func (s *Server) DebugMode() {
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	gin.DefaultWriter = log.Logger
 	gin.SetMode(gin.DebugMode)
 	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
 		log.Debug().Msgf("route:%10s\t%v", httpMethod, absolutePath)
 	}
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	log.Info().Msg("############### debug mode ###############")
 	s.env.PrintConfig()
@@ -305,80 +318,6 @@ func (s *Server) Run() error {
 
 func (s *Server) Shutdown() {
 
-}
-
-func (s *Server) LoadConfig(configPath string) error {
-	var (
-		config *env.Config
-		err    error
-	)
-	if config, err = ReadConfig(configPath); err != nil {
-		return err
-	}
-	s.config = config
-
-	return nil
-}
-
-func (s *Server) InitDB() error {
-	var err error
-	s.db, err = gorm.Open(s.config.DBConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", s.config.DBUsername, s.config.DBPassword, s.config.DBHost, s.config.DBPort, s.config.DBDatabase))
-	if err != nil {
-		return err
-	}
-	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
-	s.db.DB().SetMaxIdleConns(10)
-	// SetMaxOpenCons 设置数据库的最大连接数量。
-	s.db.DB().SetMaxOpenConns(100)
-	// SetConnMaxLifetiment 设置连接的最大可复用时间。
-	s.db.DB().SetConnMaxLifetime(time.Hour)
-
-	return nil
-}
-
-func (s *Server) InitRedis() {
-	s.redis = &redis2.Pool{
-		MaxIdle:     10,
-		IdleTimeout: 240 * time.Second,
-		TestOnBorrow: func(c redis2.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-		Dial: func() (redis2.Conn, error) {
-			c, err := redis2.Dial("tcp", fmt.Sprintf("%s:%d", s.config.RedisHost, s.config.RedisPort))
-
-			if err != nil {
-				return nil, err
-			}
-
-			if s.config.RedisPassword != "" {
-				if _, err := c.Do("AUTH", s.config.RedisPassword); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-
-			return c, err
-		},
-	}
-}
-
-func (s *Server) InitSession() error {
-	var (
-		store redis.Store
-		err   error
-	)
-	if store, err = redis.NewStoreWithPool(s.redis, []byte("secret")); err != nil {
-		return err
-	}
-
-	store.Options(sessions.Options{
-		Path:   "/",
-		MaxAge: s.config.SessionLifetime,
-	})
-	s.session = store
-
-	return nil
 }
 
 func fileExists(filename string) bool {
