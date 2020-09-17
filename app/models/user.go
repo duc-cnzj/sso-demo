@@ -19,8 +19,8 @@ type User struct {
 	Roles       []Role       `gorm:"many2many:user_role;" json:"roles"`
 	ApiTokens   []ApiToken   `json:"api_tokens"`
 
-	CurrentRoles       []string `gorm:"-"`
-	CurrentPermissions []string `gorm:"-"`
+	CurrentRoles       []string `gorm:"-" json:"-"`
+	CurrentPermissions []string `gorm:"-" json:"-"`
 }
 
 func (User) TableName() string {
