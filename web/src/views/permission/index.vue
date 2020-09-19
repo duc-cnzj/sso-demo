@@ -252,7 +252,6 @@ export default {
       this.getProjectList()
       this.getPermissions()
 
-      this.resetTemp()
       this.dialogStatus = 'create'
       this.dialogFormVisible = true
       this.$nextTick(() => {

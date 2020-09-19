@@ -5,8 +5,8 @@ import (
 )
 
 type SimplePerm struct {
-	Project string
-	Name    string
+	Project string `json:"project"`
+	Name    string `json:"name"`
 }
 
 type User struct {

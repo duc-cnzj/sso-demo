@@ -79,7 +79,7 @@
         <el-form-item label="角色" prop="name">
           <el-input v-model="temp.name" />
         </el-form-item>
-        <el-form-item label="角色权限" prop="name">
+        <el-form-item label="角色权限" prop="permissions">
           <el-select
             v-model="temp.permissions"
             multiple
@@ -95,7 +95,7 @@
               <el-option
                 v-for="item in group"
                 :key="item.id"
-                :label="`${name}.${item.name}`"
+                :label="`${name}.${item.text}`"
                 :value="item.id"
               />
             </el-option-group>

@@ -80,13 +80,13 @@ func (auth *authController) Login(ctx *gin.Context) {
 	auth.UserRepo.UpdateLastLoginAt(user)
 
 	if loginForm.RedirectUrl == "" {
-		ctx.Redirect(302, "/")
+		ctx.Redirect(303, "/")
 		return
 	}
 
 	token := auth.UserRepo.GenerateAccessToken(user)
 
-	ctx.Redirect(302, loginForm.RedirectUrl+"?access_token="+token)
+	ctx.Redirect(303, loginForm.RedirectUrl+"?access_token="+token)
 }
 
 func (auth *authController) Logout(c *gin.Context) {
@@ -98,7 +98,7 @@ func (auth *authController) Logout(c *gin.Context) {
 		auth.UserRepo.ForceLogout(user)
 	}
 
-	c.Redirect(302, "/login")
+	c.Redirect(303, "/login")
 }
 
 func (auth *authController) SelectSystem(c *gin.Context) {
