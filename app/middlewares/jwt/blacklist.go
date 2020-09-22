@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const KeyPrefix = "jwt_blacklist:"
+const BlacklistKeyPrefix = "jwt_blacklist:"
 
 func AddToBlacklist(seconds int64, token string, env *env.Env) {
 	conn := env.RedisPool().Get()
@@ -32,6 +32,6 @@ func KeyInBlacklist(token string, env *env.Env) bool {
 }
 
 func getKey(token string) string {
-	k := KeyPrefix + token
+	k := BlacklistKeyPrefix + token
 	return k
 }

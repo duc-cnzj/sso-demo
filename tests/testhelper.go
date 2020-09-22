@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sso/app/controllers/api"
+	webAuthMiddleware "sso/app/middlewares/auth"
 	"sso/app/middlewares/jwt"
 	"sso/app/models"
 	"sso/server"
@@ -171,7 +172,7 @@ func WebPostJson(url string, data interface{}, token string) *httptest.ResponseR
 	req.Header.Add("Accept", "application/json")
 
 	if token != "" {
-		req.Header.Add("X-Request-Token", token)
+		req.Header.Add(webAuthMiddleware.HttpAuthToken, token)
 	}
 	s.Engine().ServeHTTP(w, req)
 	return w

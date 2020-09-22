@@ -9,6 +9,8 @@ import (
 	"sso/repositories/user_repository"
 )
 
+const HttpAuthToken = "X-Request-Token"
+
 func SessionMiddleware(env *env.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
@@ -25,12 +27,7 @@ func SessionMiddleware(env *env.Env) gin.HandlerFunc {
 			}
 		}
 
-		// todo 有没有更好的办法
-		Scheme := "http://"
-		if c.Request.TLS != nil {
-			Scheme = "https://"
-		}
-		c.Redirect(302, "/login?redirect_url="+Scheme+c.Request.Host+c.Request.URL.Path)
+		c.Redirect(302, "/login")
 		c.Abort()
 	}
 }
@@ -85,7 +82,7 @@ func ApiMiddleware(env *env.Env) gin.HandlerFunc {
 
 	// todo 需要优化，这个接口访问最频繁，但是查了2次数据库
 	return func(c *gin.Context) {
-		token := c.Request.Header.Get("X-Request-Token")
+		token := c.Request.Header.Get(HttpAuthToken)
 		if token != "" {
 			user, err := userRepo.FindByToken(token, true)
 			log.Debug().Interface("user", user).Err(err).Msg("ApiMiddleware")

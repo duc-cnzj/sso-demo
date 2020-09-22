@@ -24,7 +24,7 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AddAllowHeaders("X-Request-Token", "Authorization")
+	config.AddAllowHeaders(webAuthMiddleware.HttpAuthToken, "Authorization")
 	router.Use(cors.New(config))
 	router.Use(sessions.Sessions("sso", env.SessionStore()), i18n.I18nMiddleware(env))
 
