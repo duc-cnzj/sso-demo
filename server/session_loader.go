@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
+	"github.com/rs/zerolog/log"
 )
 
 type SessionLoader struct {
@@ -18,6 +19,7 @@ func (sl *SessionLoader) Load(s *Server) error {
 		err   error
 	)
 	if store, err = redis.NewStoreWithPool(s.redis, []byte("secret")); err != nil {
+		log.Error().Err(err).Msg("redis.NewStoreWithPool")
 		return err
 	}
 
