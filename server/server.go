@@ -6,13 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/locales/en"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
 	_ "github.com/go-sql-driver/mysql"
 	redis2 "github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
@@ -23,12 +20,10 @@ import (
 	"os"
 	"path"
 	"reflect"
-	"regexp"
 	"sort"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/routes"
-	"time"
 )
 
 type Loader interface {
@@ -48,159 +43,6 @@ func (l LoaderCollection) Less(i, j int) bool {
 
 func (l LoaderCollection) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
-}
-
-type ConfigLoader struct {
-}
-
-func (c *ConfigLoader) GetWeight() int {
-	return 1
-}
-
-func (c *ConfigLoader) Load(s *Server) error {
-	var (
-		config *env.Config
-		err    error
-	)
-	if config, err = ReadConfig(s.configPath); err != nil {
-		return err
-	}
-	s.config = config
-
-	return nil
-}
-
-type DBLoader struct {
-}
-
-func (c *DBLoader) GetWeight() int {
-	return 2
-}
-
-func (c *DBLoader) Load(s *Server) error {
-	var err error
-	s.db, err = gorm.Open(s.config.DBConnection, fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=True&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci", s.config.DBUsername, s.config.DBPassword, s.config.DBHost, s.config.DBPort, s.config.DBDatabase))
-	if err != nil {
-		return err
-	}
-	// SetMaxIdleCons 设置连接池中的最大闲置连接数。
-	s.db.DB().SetMaxIdleConns(10)
-	// SetMaxOpenCons 设置数据库的最大连接数量。
-	s.db.DB().SetMaxOpenConns(100)
-	// SetConnMaxLifetiment 设置连接的最大可复用时间。
-	s.db.DB().SetConnMaxLifetime(time.Hour)
-
-	return nil
-}
-
-type RedisLoader struct {
-}
-
-func (r *RedisLoader) GetWeight() int {
-	return 3
-}
-
-func (r *RedisLoader) Load(s *Server) error {
-	s.redis = &redis2.Pool{
-		MaxIdle:     10,
-		IdleTimeout: 240 * time.Second,
-		TestOnBorrow: func(c redis2.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-		Dial: func() (redis2.Conn, error) {
-			c, err := redis2.Dial("tcp", fmt.Sprintf("%s:%d", s.config.RedisHost, s.config.RedisPort))
-
-			if err != nil {
-				return nil, err
-			}
-
-			if s.config.RedisPassword != "" {
-				if _, err := c.Do("AUTH", s.config.RedisPassword); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-
-			return c, err
-		},
-	}
-
-	return nil
-}
-
-type SessionLoader struct {
-}
-
-func (sl *SessionLoader) GetWeight() int {
-	return 4
-}
-
-func (sl *SessionLoader) Load(s *Server) error {
-	var (
-		store redis.Store
-		err   error
-	)
-	if store, err = redis.NewStoreWithPool(s.redis, []byte("secret")); err != nil {
-		return err
-	}
-
-	store.Options(sessions.Options{
-		Path:   "/",
-		MaxAge: s.config.SessionLifetime,
-	})
-	s.session = store
-
-	return nil
-}
-
-type EnvLoader struct {
-}
-
-func (e *EnvLoader) GetWeight() int {
-	return 5
-}
-
-func (e *EnvLoader) Load(s *Server) error {
-	s.env = env.NewEnv(
-		s.config,
-		s.db,
-		s.session,
-		s.redis,
-		env.WithUniversalTranslator(s.LoadTranslators()),
-		env.WithRootDir(s.rootPath),
-	)
-
-	return nil
-}
-
-type ValidatorLoader struct {
-}
-
-func (v *ValidatorLoader) Load(s *Server) error {
-	s.RegisterValidation()
-	return nil
-}
-
-func (v *ValidatorLoader) GetWeight() int {
-	return 10
-}
-
-type EnvironmentLoader struct {
-}
-
-func (e *EnvironmentLoader) Load(s *Server) error {
-	if s.env.IsProduction() {
-		s.ProductionMode()
-	} else if s.env.IsDebugging() {
-		s.DebugMode()
-	}
-
-	return nil
-}
-
-func (e *EnvironmentLoader) GetWeight() int {
-	return 8
 }
 
 type Server struct {
@@ -267,28 +109,12 @@ func (s *Server) Init(configPath, rootPath string) error {
 	return nil
 }
 
-func (s *Server) LoadTranslators() *ut.UniversalTranslator {
-	zhLang := zh.New()
-	enLang := en.New()
-	uni := ut.New(enLang, zhLang, enLang)
-	return uni
+func (s *Server) Run() error {
+	return s.engine.Run(fmt.Sprintf(":%d", s.config.AppPort))
 }
 
-func (s *Server) RegisterValidation() {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("slug", func(fl validator.FieldLevel) bool {
-			slug, ok := fl.Field().Interface().(string)
-			if ok {
-				regex := regexp.MustCompile("^[a-zA-Z_-]+$")
-				match := regex.Match([]byte(slug))
-				if match {
-					return true
-				}
-			}
+func (s *Server) Shutdown() {
 
-			return false
-		})
-	}
 }
 
 func (s *Server) ProductionMode() {
@@ -310,12 +136,11 @@ func (s *Server) DebugMode() {
 	// s.db.LogMode(true)
 }
 
-func (s *Server) Run() error {
-	return s.engine.Run(fmt.Sprintf(":%d", s.config.AppPort))
-}
-
-func (s *Server) Shutdown() {
-
+func (s *Server) LoadTranslators() *ut.UniversalTranslator {
+	zhLang := zh.New()
+	enLang := en.New()
+	uni := ut.New(enLang, zhLang, enLang)
+	return uni
 }
 
 func fileExists(filename string) bool {
