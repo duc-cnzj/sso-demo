@@ -11,10 +11,6 @@ import (
 	"sso/utils/exception"
 )
 
-func New(env *env.Env) *apiTokenController {
-	return &apiTokenController{env: env, AllRepo: api.NewAllRepo(env)}
-}
-
 type apiTokenController struct {
 	env *env.Env
 	*api.AllRepo
@@ -27,6 +23,10 @@ type Uri struct {
 type Paginate struct {
 	Page     int `form:"page"`
 	PageSize int `form:"page_size"`
+}
+
+func New(env *env.Env) *apiTokenController {
+	return &apiTokenController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 func (token *apiTokenController) Index(c *gin.Context) {

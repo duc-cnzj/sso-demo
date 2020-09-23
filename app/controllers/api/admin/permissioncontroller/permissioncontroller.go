@@ -134,7 +134,9 @@ func (p *PermissionController) Store(c *gin.Context) {
 		Text:    input.Text,
 	}
 	if err := p.PermRepo.Create(pnew); err != nil {
-		log.Fatal().Err(err).Msg("")
+		log.Error().Err(err).Msg("")
+		exception.InternalErrorWithMsg(c, err.Error())
+		return
 	}
 
 	c.JSON(201, gin.H{"code": 201, "data": pnew})
@@ -159,21 +161,27 @@ func (p *PermissionController) Update(c *gin.Context) {
 	var (
 		input UpdateInput
 		uri   Uri
+		err   error
 	)
-	if err := c.ShouldBindUri(&uri); err != nil {
+
+	if err = c.ShouldBindUri(&uri); err != nil {
 		exception.ValidateException(c, err, p.env)
 		return
 	}
-	if err := c.ShouldBind(&input); err != nil {
+
+	if err = c.ShouldBind(&input); err != nil {
 		exception.ValidateException(c, err, p.env)
-		log.Debug().Err(err).Msg("PermissionController Update err: ")
+		log.Error().Err(err).Msg("PermissionController Update err: ")
 		return
 	}
+
 	permission, _ := p.PermRepo.FindById(uri.Permission)
+
 	if permission == nil {
 		exception.ModelNotFound(c, "Permission")
 		return
 	}
+
 	hasPermission, _ := p.PermRepo.FindByName(input.Name)
 	if hasPermission != nil && hasPermission.ID != permission.ID {
 		var errors = form.ValidateErrors{
@@ -185,12 +193,13 @@ func (p *PermissionController) Update(c *gin.Context) {
 		exception.ValidateException(c, errors, p.env)
 		return
 	}
-
-	e := p.env.GetDB().Model(permission).Updates(map[string]interface{}{
-		"name": input.Name, "project": input.Project, "text": input.Text,
-	})
-	if e.Error != nil {
-		log.Panic().Msg(e.Error.Error())
+	e := p.env.GetDB().
+		Model(permission).
+		Updates(map[string]interface{}{"name": input.Name, "project": input.Project, "text": input.Text}).Error
+	if e != nil {
+		log.Error().Msg(e.Error())
+		exception.InternalErrorWithMsg(c, e.Error())
+		return
 	}
 	c.JSON(200, gin.H{"code": 200, "data": permission})
 }
@@ -198,7 +207,7 @@ func (p *PermissionController) Update(c *gin.Context) {
 func (p *PermissionController) Destroy(c *gin.Context) {
 	var uri Uri
 	if err := c.ShouldBindUri(&uri); err != nil {
-		c.AbortWithError(500, err)
+		exception.InternalErrorWithMsg(c, err.Error())
 		return
 	}
 
@@ -257,7 +266,9 @@ func (p *PermissionController) GetByGroups(c *gin.Context) {
 func (p *PermissionController) GetPermissionProjects(c *gin.Context) {
 	var res []models.Permission
 	if err := p.env.GetDB().Model(&models.Permission{}).Select([]string{"distinct project"}).Find(&res).Error; err != nil {
-		log.Panic().Err(err).Msg("PermissionController.GetPermissionProjects")
+		log.Error().Err(err).Msg("PermissionController.GetPermissionProjects")
+		exception.InternalErrorWithMsg(c, err.Error())
+		return
 	}
 
 	var items []string

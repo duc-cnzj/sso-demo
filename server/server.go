@@ -192,9 +192,7 @@ type EnvironmentLoader struct {
 func (e *EnvironmentLoader) Load(s *Server) error {
 	if s.env.IsProduction() {
 		s.ProductionMode()
-	}
-
-	if s.env.IsDebugging() {
+	} else if s.env.IsDebugging() {
 		s.DebugMode()
 	}
 

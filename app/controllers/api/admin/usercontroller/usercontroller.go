@@ -24,7 +24,6 @@ type StoreInput struct {
 type UpdateInput struct {
 	UserName string `form:"user_name"`
 	Email    string `form:"email"`
-	//Password string `form:"password"`
 }
 
 type QueryInput struct {
@@ -119,7 +118,8 @@ func (user *UserController) Store(ctx *gin.Context) {
 	password, err := user.UserRepo.GeneratePwd(input.Password)
 
 	if err != nil {
-		log.Panic().Err(err).Msg("UserController.GenerateFromPassword")
+		log.Error().Err(err).Msg("UserController.GenerateFromPassword")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 
@@ -130,7 +130,9 @@ func (user *UserController) Store(ctx *gin.Context) {
 	}
 
 	if err := user.UserRepo.Create(newUser); err != nil {
-		log.Panic().Err(err).Msg("UserController.GenerateFromPassword")
+		log.Error().Err(err).Msg("UserController.GenerateFromPassword")
+		exception.InternalErrorWithMsg(ctx, err.Error())
+		return
 	}
 
 	ctx.JSON(201, gin.H{"code": 201, "data": newUser})
@@ -144,7 +146,8 @@ func (user *UserController) Show(ctx *gin.Context) {
 	)
 
 	if id, err = strconv.Atoi(ctx.Param("user")); err != nil {
-		log.Panic().Err(err).Msg("UserController.Show")
+		log.Error().Err(err).Msg("UserController.Show")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 
@@ -160,12 +163,13 @@ func (user *UserController) Update(ctx *gin.Context) {
 	var input UpdateInput
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panic().Err(err).Msg("UserController.Update")
+		log.Error().Err(err).Msg("UserController.Update")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 	if err := ctx.ShouldBind(&input); err != nil {
 		exception.ValidateException(ctx, err, user.env)
-		log.Panic().Err(err).Msg("UserController.Update")
+		log.Error().Err(err).Msg("UserController.Update")
 
 		return
 	}
@@ -199,6 +203,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 	}
 	if err = user.env.GetDB().Model(byId).Updates(updates).Error; err != nil {
 		log.Error().Err(err).Msg("")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 
@@ -208,7 +213,8 @@ func (user *UserController) Update(ctx *gin.Context) {
 func (user *UserController) Destroy(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panic().Err(err).Msg("UserController.Destroy")
+		log.Error().Err(err).Msg("UserController.Destroy")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 
@@ -224,7 +230,9 @@ func (user *UserController) Destroy(ctx *gin.Context) {
 
 		return nil
 	}); err != nil {
-		log.Panic().Err(err).Msg("UserController.Destroy")
+		log.Error().Err(err).Msg("UserController.Destroy")
+		exception.InternalErrorWithMsg(ctx, err.Error())
+		return
 	}
 
 	ctx.JSON(204, nil)
@@ -234,7 +242,8 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 	var input SyncInput
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panic().Err(err).Msg("UserController.SyncRoles")
+		log.Error().Err(err).Msg("UserController.SyncRoles")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 
 		return
 	}
@@ -252,7 +261,9 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 	}
 
 	if err := user.UserRepo.SyncRoles(byId, input.RoleIds); err != nil {
-		log.Panic().Err(err).Msg("UserController.SyncRoles")
+		log.Error().Err(err).Msg("UserController.SyncRoles")
+		exception.InternalErrorWithMsg(ctx, err.Error())
+		return
 	}
 
 	roles, _ := user.UserRepo.FindWithRoles(uint(id))
@@ -263,7 +274,9 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 func (user *UserController) ForceLogout(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("user"))
 	if err != nil {
-		log.Panic().Err(err).Msg("UserController.ForceLogout")
+		log.Error().Err(err).Msg("UserController.ForceLogout")
+		exception.InternalErrorWithMsg(ctx, err.Error())
+
 		return
 	}
 

@@ -1,12 +1,12 @@
 package authcontroller
 
 import (
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"sso/app/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
+	"sso/utils/exception"
 )
 
 type LoginForm struct {
@@ -39,21 +39,22 @@ func (auth *authController) Info(c *gin.Context) {
 	}
 
 	var (
-		data       interface{}
-		err        error
-		userCtx, _ = c.Get("user")
-		user       = userCtx.(*models.User)
-		uri        = &Uri{}
+		data interface{}
+		err  error
+		user = c.MustGet("user").(*models.User)
+		uri  = &Uri{}
 	)
 
-	if err := c.ShouldBindUri(uri); err != nil {
+	if err = c.ShouldBindUri(uri); err != nil {
 		log.Error().Err(err).Msg("authController.Info")
+		exception.InternalErrorWithMsg(c, err.Error())
+
 		return
 	}
 
 	if data, err = auth.UserRepo.LoadUserRoleAndPermissionPretty(user, uri.Project); err != nil {
-		log.Fatal().Err(err).Msg("authController.Info")
-		c.AbortWithError(500, errors.New("internal error"))
+		log.Error().Err(err).Msg("authController.Info")
+		exception.InternalErrorWithMsg(c, err.Error())
 
 		return
 	}

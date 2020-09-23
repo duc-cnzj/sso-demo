@@ -8,16 +8,13 @@ import (
 	"sso/app/middlewares/jwt"
 	"sso/app/models"
 	"sso/config/env"
+	"sso/repositories/user_repository"
 	"sso/utils/exception"
 )
 
 type LoginForm struct {
 	UserName string `form:"email" json:"email" binding:"required"`
 	Password string `form:"password" json:"password" binding:"required"`
-}
-
-func New(env *env.Env) *authController {
-	return &authController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 type authController struct {
@@ -28,6 +25,10 @@ type authController struct {
 type LoginFormVal struct {
 	RedirectUrl string
 	Errors      []string
+}
+
+func New(env *env.Env) *authController {
+	return &authController{env: env, AllRepo: api.NewAllRepo(env)}
 }
 
 func (auth *authController) Login(ctx *gin.Context) {
@@ -45,20 +46,16 @@ func (auth *authController) Login(ctx *gin.Context) {
 	}
 
 	if user, err = auth.UserRepo.FindByEmail(loginForm.UserName); err != nil {
-		log.Error().Err(err).Msg("auth.UserRepo.FindByEmail")
-	}
-
-	printErrorBack := func() {
-		ctx.JSON(401, gin.H{"code": 401, "msg": "Unauthorized!"})
+		log.Debug().Err(err).Msg("auth.UserRepo.FindByEmail")
 	}
 
 	if user == nil {
-		printErrorBack()
+		exception.Unauthorized(ctx)
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginForm.Password)); err != nil {
-		printErrorBack()
+		exception.Unauthorized(ctx)
 		return
 	}
 
@@ -69,13 +66,14 @@ func (auth *authController) Login(ctx *gin.Context) {
 	auth.env.Auth().SetUser(user)
 
 	if !auth.env.Auth().HasRole("sso") {
-		ctx.JSON(403, gin.H{"code": 403, "msg": "Forbidden!"})
+		exception.Forbidden(ctx)
 		return
 	}
 
 	token, err = jwt.GenerateToken(user, auth.env)
 	if err != nil {
-		log.Panic().Err(err).Msg("jwt.GenerateToken")
+		log.Error().Err(err).Msg("jwt.GenerateToken")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 
@@ -91,14 +89,18 @@ func (auth *authController) Logout(c *gin.Context) {
 	c.JSON(204, nil)
 }
 
-// 这个info和web.authcontroller.Info 获取的数据是一样的
 func (auth *authController) Info(c *gin.Context) {
-	userCtx, _ := c.Get("user")
-	user := userCtx.(*models.User)
-	if err := auth.env.GetDB().Preload("Roles.Permissions").Find(&user).Error; err != nil {
+	var (
+		user   = c.MustGet("user").(*models.User)
+		err    error
+		pretty *user_repository.UserWithRBAC
+	)
+
+	if pretty, err = auth.UserRepo.LoadUserRoleAndPermissionPretty(user, "sso"); err != nil {
 		log.Fatal().Err(err).Msg("authController.Info")
+		exception.InternalError(c)
 		return
 	}
 
-	c.JSON(200, gin.H{"data": user})
+	c.JSON(200, gin.H{"data": pretty})
 }

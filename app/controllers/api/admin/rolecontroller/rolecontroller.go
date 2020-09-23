@@ -103,8 +103,8 @@ func (role *RoleController) Index(ctx *gin.Context) {
 func (role *RoleController) Store(ctx *gin.Context) {
 	input := &RoleStoreInput{}
 	if err := ctx.ShouldBind(input); err != nil {
+		log.Error().Err(err).Msg("RoleController.Store")
 		exception.ValidateException(ctx, err, role.env)
-		log.Debug().Err(err).Msg("RoleController.Store")
 		return
 	}
 
@@ -128,7 +128,7 @@ func (role *RoleController) Store(ctx *gin.Context) {
 	err := role.RoleRepo.CreateWithPermissionIds(r, input.PermissionIds)
 	if err != nil {
 		log.Error().Err(err).Msg("role.RoleRepo.CreateWithPermissionIds")
-		ctx.AbortWithError(500, err)
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 
@@ -140,7 +140,8 @@ func (role *RoleController) Store(ctx *gin.Context) {
 func (role *RoleController) Show(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("role"))
 	if err != nil {
-		log.Panic().Err(err).Msg("RoleController.Show")
+		log.Error().Err(err).Msg("RoleController.Show")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 
 		return
 	}
@@ -158,7 +159,8 @@ func (role *RoleController) Update(ctx *gin.Context) {
 	var input RoleUpdateInput
 	id, err := strconv.Atoi(ctx.Param("role"))
 	if err != nil {
-		log.Panic().Err(err).Msg("RoleController.Update")
+		log.Error().Err(err).Msg("RoleController.Update")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 
 		return
 	}
@@ -214,7 +216,8 @@ func (role *RoleController) Update(ctx *gin.Context) {
 func (role *RoleController) Destroy(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("role"))
 	if err != nil {
-		log.Panic().Err(err).Msg("RoleController Destroy err: ")
+		log.Error().Err(err).Msg("RoleController Destroy err: ")
+		exception.InternalErrorWithMsg(ctx, err.Error())
 		return
 	}
 

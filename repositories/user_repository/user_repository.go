@@ -191,15 +191,15 @@ func (repo *UserRepository) GenerateAccessToken(user *models.User) string {
 func (repo *UserRepository) FindByToken(token string, updateLastUseAt bool) (*models.User, error) {
 	var (
 		apiToken = &models.ApiToken{}
+		seconds  = time.Second * time.Duration(repo.env.Config().ApiTokenLifetime)
 	)
 
 	if err := repo.env.GetDB().Preload("User").First(apiToken, map[string]interface{}{"api_token": token}).Error; err != nil {
 		return nil, err
 	}
 
-	seconds := time.Second * time.Duration(repo.env.Config().ApiTokenLifetime)
 	sub := apiToken.CreatedAt.Add(seconds).Sub(time.Now())
-	log.Debug().Interface("sub", sub).Interface("sec", seconds).Interface("ca", apiToken.CreatedAt).Interface("now", time.Now()).Msg("dad")
+
 	if sub < 0 {
 		log.Debug().Msg("token 过期")
 		repo.env.GetDB().Delete(apiToken)
@@ -207,8 +207,7 @@ func (repo *UserRepository) FindByToken(token string, updateLastUseAt bool) (*mo
 	}
 
 	if updateLastUseAt {
-		now := time.Now()
-		repo.env.GetDB().Model(apiToken).Updates(map[string]interface{}{"LastUseAt": &now})
+		repo.env.GetDB().Model(apiToken).Select("last_use_at").Update("last_use_at", time.Now())
 	}
 
 	return &apiToken.User, nil
@@ -249,7 +248,10 @@ func (repo *UserRepository) LoadUserRoleAndPermissionPretty(user *models.User, p
 		}
 	}
 
-	if err := repo.env.GetDB().Preload("Roles.Permissions", cond...).Preload("Permissions", cond...).First(&user).Error; err != nil {
+	if err := repo.env.GetDB().
+		Preload("Roles.Permissions", cond...).
+		//Preload("Permissions", cond...).
+		First(&user).Error; err != nil {
 		return nil, err
 	}
 
