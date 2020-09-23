@@ -23,7 +23,7 @@ func KeyInBlacklist(token string, env *env.Env) bool {
 	defer conn.Close()
 	k := getKey(token)
 	do, err := redis.String(conn.Do("GET", k))
-	log.Error().Err(err).Msg("jwt.KeyInBlacklist")
+	log.Debug().Err(err).Msg("jwt.KeyInBlacklist")
 	if do != "" {
 		return true
 	}
