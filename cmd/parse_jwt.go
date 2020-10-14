@@ -17,6 +17,7 @@ var parseJwtCmd = &cobra.Command{
 			err error
 			s   = &server.Server{}
 		)
+		s.SetRunningInConsole()
 		if err = s.Init(envPath, ""); err != nil {
 			return
 		}

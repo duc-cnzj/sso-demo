@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"sso/app/controllers/api"
 	"sso/app/models"
 	"sso/config/env"
 	"sso/repositories/user_repository"
 	"sso/server"
+
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -67,6 +68,7 @@ var setupCmd = &cobra.Command{
 			err error
 			s   = &server.Server{}
 		)
+		s.SetRunningInConsole()
 		if err = s.Init(envPath, ""); err != nil {
 			return
 		}

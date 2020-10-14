@@ -5,6 +5,15 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+	"reflect"
+	"sort"
+	"sso/app/models"
+	"sso/config/env"
+	"sso/routes"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/locales/en"
@@ -16,14 +25,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"os"
-	"path"
-	"reflect"
-	"sort"
-	"sso/app/models"
-	"sso/config/env"
-	"sso/routes"
 )
 
 type Loader interface {
@@ -46,19 +47,28 @@ func (l LoaderCollection) Swap(i, j int) {
 }
 
 type Server struct {
-	rootPath   string
-	configPath string
-	env        *env.Env
-	config     *env.Config
-	db         *gorm.DB
-	redis      *redis2.Pool
-	session    sessions.Store
-	engine     *gin.Engine
-	loaders    LoaderCollection
+	rootPath         string
+	configPath       string
+	env              *env.Env
+	config           *env.Config
+	db               *gorm.DB
+	redis            *redis2.Pool
+	session          sessions.Store
+	engine           *gin.Engine
+	loaders          LoaderCollection
+	runningInConsole bool
 }
 
 func (s *Server) Engine() *gin.Engine {
 	return s.engine
+}
+
+func (s *Server) SetRunningInConsole() {
+	s.runningInConsole = true
+}
+
+func (s *Server) RunningInConsole() bool {
+	return s.runningInConsole
 }
 
 func (s *Server) Config() *env.Config {
@@ -104,6 +114,9 @@ func (s *Server) Init(configPath, rootPath string) error {
 
 	r := gin.New()
 
+	if s.RunningInConsole() {
+		s.env.SkipLoadResources()
+	}
 	s.engine = routes.Init(r, s.env)
 
 	return nil

@@ -1,14 +1,15 @@
 package env
 
 import (
+	"sso/app/auth"
+	"sso/app/models"
+	"sync"
+
 	"github.com/gin-contrib/sessions"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/rs/zerolog/log"
-	"sso/app/auth"
-	"sso/app/models"
-	"sync"
 )
 
 type Config struct {
@@ -38,14 +39,15 @@ type Config struct {
 }
 
 type Env struct {
-	translator   *ut.UniversalTranslator
-	db           *gorm.DB
-	sessionStore sessions.Store
-	redisPool    *redis.Pool
-	config       *Config
-	rootDir      string
-	mu           *sync.Mutex
-	auth         *auth.Auth
+	translator       *ut.UniversalTranslator
+	db               *gorm.DB
+	sessionStore     sessions.Store
+	redisPool        *redis.Pool
+	config           *Config
+	rootDir          string
+	mu               *sync.Mutex
+	auth             *auth.Auth
+	skipLoadResource bool
 }
 
 func (e *Env) SetAuth(auth *auth.Auth) {
@@ -62,6 +64,14 @@ func (e *Env) SetDB(db *gorm.DB) {
 
 func (e *Env) IsDebugging() bool {
 	return e.config.Debug
+}
+
+func (e *Env) SkipLoadResources() {
+	e.skipLoadResource = true
+}
+
+func (e *Env) IsSkipLoadResources() bool {
+	return e.skipLoadResource || e.IsTesting()
 }
 
 func (e *Env) Config() *Config {

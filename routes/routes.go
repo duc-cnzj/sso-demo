@@ -1,9 +1,6 @@
 package routes
 
 import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"sso/app/controllers/api"
 	"sso/app/controllers/api/admin/apitokencontroller"
@@ -17,6 +14,10 @@ import (
 	"sso/app/middlewares/i18n"
 	"sso/app/middlewares/jwt"
 	"sso/config/env"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 func Init(router *gin.Engine, env *env.Env) *gin.Engine {
@@ -28,7 +29,7 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 	router.Use(cors.New(config))
 	router.Use(sessions.Sessions("sso", env.SessionStore()), i18n.I18nMiddleware(env))
 
-	if !env.IsTesting() {
+	if !env.IsSkipLoadResources() {
 		router.Static("/assets", env.RootDir()+"resources/views/web/css")
 		router.Static("/images", env.RootDir()+"resources/views/web/images")
 		router.Static("/avatars", env.RootDir()+"resources/views/admin/avatars")
