@@ -29,5 +29,7 @@ func (sl *SessionLoader) Load(s *Server) error {
 	})
 	s.session = store
 
+	log.Info().Msg("Session loaded.")
+
 	return nil
 }

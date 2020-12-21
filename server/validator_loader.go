@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog/log"
 	"regexp"
 )
 
@@ -24,6 +25,8 @@ func (v *ValidatorLoader) Load(s *Server) error {
 			return false
 		})
 	}
+
+	log.Info().Msg("Validator loaded.")
 
 	return nil
 }

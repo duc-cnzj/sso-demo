@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/gomodule/redigo/redis"
+	"github.com/rs/zerolog/log"
 	"time"
 )
 
@@ -25,6 +26,7 @@ func (r *RedisLoader) Load(s *Server) error {
 			c, err := redis.Dial("tcp", fmt.Sprintf("%s:%d", s.config.RedisHost, s.config.RedisPort))
 
 			if err != nil {
+				log.Debug().Err(err).Msg("RedisLoader Load")
 				return nil, err
 			}
 
@@ -38,6 +40,8 @@ func (r *RedisLoader) Load(s *Server) error {
 			return c, err
 		},
 	}
+
+	log.Info().Msg("Redis loaded.")
 
 	return nil
 }

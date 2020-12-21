@@ -1,6 +1,9 @@
 package server
 
-import "sso/config/env"
+import (
+	"github.com/rs/zerolog/log"
+	"sso/config/env"
+)
 
 type ConfigLoader struct {
 }
@@ -15,9 +18,11 @@ func (c *ConfigLoader) Load(s *Server) error {
 		err    error
 	)
 	if config, err = ReadConfig(s.configPath); err != nil {
+		log.Debug().Err(err).Msg("ConfigLoader Load")
 		return err
 	}
 	s.config = config
+	log.Info().Msg("Config loaded.")
 
 	return nil
 }

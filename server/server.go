@@ -100,6 +100,7 @@ func (s *Server) Init(configPath, rootPath string) error {
 
 	for _, loader := range loaders {
 		if err := loader.Load(s); err != nil {
+			log.Debug().Err(err).Msg("loader.Load")
 			return err
 		}
 	}
@@ -119,10 +120,14 @@ func (s *Server) Init(configPath, rootPath string) error {
 	}
 	s.engine = routes.Init(r, s.env)
 
+	log.Info().Msg("server inited.")
+
 	return nil
 }
 
 func (s *Server) Run() error {
+	log.Info().Msg(fmt.Sprintf("server running at :%d", s.config.AppPort))
+
 	return s.engine.Run(fmt.Sprintf(":%d", s.config.AppPort))
 }
 
