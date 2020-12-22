@@ -16,23 +16,23 @@ import (
 )
 
 type StoreInput struct {
-	UserName string `form:"user_name"`
-	Email    string `form:"email"`
-	Password string `form:"password"`
+	UserName string `form:"user_name" json:"user_name"`
+	Email    string `form:"email" json:"email"`
+	Password string `form:"password" json:"password"`
 }
 
 type UpdateInput struct {
-	UserName string `form:"user_name"`
-	Email    string `form:"email"`
+	UserName string `form:"user_name" json:"user_name"`
+	Email    string `form:"email" json:"email"`
 }
 
 type QueryInput struct {
-	UserName string `form:"user_name"`
-	Email    string `form:"email"`
+	UserName string `form:"user_name" json:"user_name"`
+	Email    string `form:"email" json:"email"`
 
-	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
-	Sort     string `form:"sort"`
+	Page     int    `form:"page" json:"page"`
+	PageSize int    `form:"page_size" json:"page_size"`
+	Sort     string `form:"sort" json:"sort"`
 }
 
 type SyncInput struct {
@@ -173,6 +173,7 @@ func (user *UserController) Update(ctx *gin.Context) {
 
 		return
 	}
+	log.Debug().Interface("UpdateInput", input).Msg("UpdateInput")
 
 	byId, _ := user.UserRepo.FindById(uint(id))
 

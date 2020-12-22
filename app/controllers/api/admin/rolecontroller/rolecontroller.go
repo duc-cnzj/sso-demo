@@ -15,11 +15,11 @@ import (
 )
 
 type QueryInput struct {
-	Name string `form:"name"`
-	Sort string `form:"sort"`
+	Name string `form:"name" json:"name"`
+	Sort string `form:"sort" json:"sort"`
 
-	Page     int `form:"page"`
-	PageSize int `form:"page_size"`
+	Page     int `form:"page" json:"page"`
+	PageSize int `form:"page_size" json:"page_size"`
 }
 
 type RoleStoreInput struct {

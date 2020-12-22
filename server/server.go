@@ -151,7 +151,7 @@ func (s *Server) DebugMode() {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	log.Info().Msg("############### debug mode ###############")
 	s.env.PrintConfig()
-	// s.db.LogMode(true)
+	s.db.LogMode(true)
 }
 
 func (s *Server) LoadTranslators() *ut.UniversalTranslator {

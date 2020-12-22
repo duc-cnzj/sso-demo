@@ -19,7 +19,7 @@ type PermissionController struct {
 }
 
 type Uri struct {
-	Permission uint `uri:"permission" binding:"required"`
+	Permission uint `uri:"permission" binding:"required" json:"permission"`
 }
 
 type StoreInput struct {
@@ -35,12 +35,12 @@ type UpdateInput struct {
 }
 
 type QueryInput struct {
-	Name    string `form:"name"`
-	Project string `form:"project"`
-	Sort    string `form:"sort"`
+	Name    string `form:"name" json:"name"`
+	Project string `form:"project" json:"project"`
+	Sort    string `form:"sort" json:"sort"`
 
-	Page     int `form:"page"`
-	PageSize int `form:"page_size"`
+	Page     int `form:"page" json:"page"`
+	PageSize int `form:"page_size" json:"page_size"`
 }
 
 func NewPermissionController(env *env.Env) *PermissionController {
