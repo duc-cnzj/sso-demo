@@ -138,9 +138,10 @@ func (repo *UserRepository) GenerateApiToken(user *models.User) string {
 
 		exists := repo.env.GetDB().First(apiToken, data)
 		if exists.Error != nil && errors.Is(gorm.ErrRecordNotFound, exists.Error) {
-			apiToken.ApiToken = token
-			apiToken.UserID = user.ID
-			repo.env.GetDB().Create(apiToken)
+			repo.env.GetDB().Create(&models.ApiToken{
+				UserID:   user.ID,
+				ApiToken: token,
+			})
 			return token
 		}
 
