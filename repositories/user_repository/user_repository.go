@@ -30,6 +30,7 @@ var (
 type UserRepositoryImp interface {
 	FindByEmail(string, ...interface{}) (*models.User, error)
 	GeneratePwd(string) (string, error)
+	ChangePwd(*models.User, string) error
 	Create(*models.User) error
 	FindById(uint) (*models.User, error)
 	SyncRoles(*models.User, []uint) error
@@ -73,6 +74,15 @@ func (repo *UserRepository) GeneratePwd(pwd string) (string, error) {
 	}
 
 	return string(password), nil
+}
+
+func (repo *UserRepository) ChangePwd(user *models.User, pwd string) error {
+	password, err := repo.GeneratePwd(pwd)
+	if err != nil {
+		return err
+	}
+
+	return repo.env.GetDB().Model(user).Update("password", password).Error
 }
 
 func (repo *UserRepository) Create(user *models.User) error {

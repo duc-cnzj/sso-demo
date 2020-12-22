@@ -35,6 +35,10 @@ type QueryInput struct {
 	Sort     string `form:"sort" json:"sort"`
 }
 
+type ChangePwdInput struct {
+	Password string `json:"password" binding:"required"`
+}
+
 type SyncInput struct {
 	RoleIds []uint `form:"role_ids" json:"role_ids"`
 }
@@ -270,6 +274,37 @@ func (user *UserController) SyncRoles(ctx *gin.Context) {
 	roles, _ := user.UserRepo.FindWithRoles(uint(id))
 
 	ctx.JSON(200, gin.H{"data": roles})
+}
+
+func (user *UserController) ChangePassword(ctx *gin.Context) {
+	var input ChangePwdInput
+	id, err := strconv.Atoi(ctx.Param("user"))
+	if err != nil {
+		log.Error().Err(err).Msg("UserController.ForceLogout")
+		exception.InternalErrorWithMsg(ctx, err.Error())
+
+		return
+	}
+
+	if err := ctx.ShouldBind(&input); err != nil {
+		exception.ValidateException(ctx, err, user.env)
+		log.Debug().Err(err).Msg("UserController.ChangePassword")
+		return
+	}
+
+	byId, _ := user.UserRepo.FindById(uint(id))
+	if byId == nil {
+		exception.ModelNotFound(ctx, "user")
+		return
+	}
+
+	if err := user.UserRepo.ChangePwd(byId, input.Password); err != nil {
+		exception.ValidateException(ctx, err, user.env)
+		log.Debug().Err(err).Msg("UserController.ChangePwd")
+		return
+	}
+
+	ctx.JSON(204, nil)
 }
 
 func (user *UserController) ForceLogout(ctx *gin.Context) {

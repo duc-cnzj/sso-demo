@@ -3,6 +3,7 @@ package integrations_test
 import (
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 	"net/http/httptest"
 	"sso/app/models"
 	"sso/tests"
@@ -159,7 +160,7 @@ func TestUserController_Update(t *testing.T) {
 				name:  "401",
 				token: "",
 				body: map[string]string{
-					"name": "abc",
+					"user_name": "abc",
 				},
 				code: 401,
 			},
@@ -167,11 +168,21 @@ func TestUserController_Update(t *testing.T) {
 				name:  "success",
 				token: token,
 				body: map[string]string{
-					"name":  "abc",
-					"email": "abc@abc.com",
+					"user_name": "qwer",
+					"email":     "abc@abc.com",
 				},
 				code: 200,
-				res:  "abc",
+				res:  "qwer",
+			},
+			{
+				name:  "success",
+				token: token,
+				body: map[string]string{
+					"user_name": "qwer",
+					"email":     "abc@abc.com",
+				},
+				code: 200,
+				res:  "abc@abc.com",
 			},
 		}
 
@@ -305,6 +316,54 @@ func TestUserController_ForceLogout(t *testing.T) {
 				if w.Code == 200 {
 					byId, _ := repos.UserRepo.FindById(u.ID)
 					assert.NotEqual(t, byId.LogoutToken, u.LogoutToken)
+				}
+			})
+		}
+	})
+
+}
+
+func TestUserController_ChangePassword(t *testing.T) {
+	tests.WarpTxRollback(s, func() {
+		// api token logout token 都会不一样
+		u, token := tests.NewUserWithToken(&models.User{
+			UserName:    "duc",
+			Email:       "1@q.c",
+			LogoutToken: "1234",
+			Password:    "123",
+		})
+		atoi := strconv.Itoa(int(u.ID))
+		data := []struct {
+			name  string
+			token string
+			body  map[string]string
+			code  int
+			res   string
+		}{
+			{
+				name:  "401",
+				token: "",
+				code:  401,
+			},
+			{
+				name:  "success",
+				token: token,
+				body: map[string]string{
+					"password": "123456duc2345678",
+				},
+				code: 204,
+			},
+		}
+
+		var w *httptest.ResponseRecorder
+		for _, test := range data {
+			t.Run(test.name, func(t *testing.T) {
+				w = tests.PostJson("/api/admin/users/"+atoi+"/change_password", test.body, test.token)
+				assert.Equal(t, test.code, w.Code)
+				t.Log(w.Body.String())
+				if w.Code == 204 {
+					byId, _ := repos.UserRepo.FindById(u.ID)
+					assert.Nil(t, bcrypt.CompareHashAndPassword([]byte(byId.Password), []byte(test.body["password"])))
 				}
 			})
 		}

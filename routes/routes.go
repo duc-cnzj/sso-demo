@@ -100,6 +100,7 @@ func Init(router *gin.Engine, env *env.Env) *gin.Engine {
 		apiGroup.DELETE("/permissions/:permission", permissions.Destroy)
 
 		user := usercontroller.NewUserController(env)
+		apiGroup.POST("/users/:user/change_password", user.ChangePassword)
 		apiGroup.POST("/users/:user/force_logout", user.ForceLogout)
 		apiGroup.POST("/users/:user/sync_roles", user.SyncRoles)
 		apiGroup.GET("/users", user.Index)
