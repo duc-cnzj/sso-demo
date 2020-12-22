@@ -15,7 +15,7 @@ COPY --from=build-stage /app/dist /app/resources/views/admin/
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
   apk add --no-cache ca-certificates tzdata
 
-RUN go env -w GOPROXY=https://goproxy.io && \
+RUN go env -w GOPROXY=https://goproxy.cn && \
     go env -w GO111MODULE=on && \
     go mod tidy -v
 
