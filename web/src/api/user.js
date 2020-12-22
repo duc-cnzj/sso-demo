@@ -46,6 +46,16 @@ export const syncRoles = (id, data) => {
   })
 }
 
+export const changePwd = (id, password) => {
+  return request({
+    method: 'post',
+    url: `/api/admin/users/${id}/change_password`,
+    data: {
+      password
+    }
+  })
+}
+
 export const forceLogout = (id) => {
   return request({
     method: 'post',

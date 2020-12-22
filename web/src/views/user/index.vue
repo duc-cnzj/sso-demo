@@ -1,14 +1,25 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input v-model="listQuery.name" placeholder="name" style="width: 200px;margin-right: 10px;" class="filter-item" @keyup.enter.native="handleFilter" />
-      <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
+      <el-input
+        v-model="listQuery.name"
+        placeholder="name"
+        style="width: 200px;margin-right: 10px;"
+        class="filter-item"
+        @keyup.enter.native="handleFilter"
+      />
+      <el-button
+        v-waves
+        class="filter-item"
+        type="primary"
+        icon="el-icon-search"
+        @click="handleFilter"
+      >
         搜索
       </el-button>
       <el-button type="info" style="margin-left: 10px;" @click="handleCreate">
         新增
       </el-button>
-
     </div>
 
     <el-table
@@ -21,63 +32,97 @@
       style="width: 100%;margin-top: 10px;"
       @sort-change="sortChange"
     >
-      <el-table-column label="ID" prop="id" sortable="custom" align="center" width="80" :class-name="getSortClass('id')">
-        <template slot-scope="{row}">
+      <el-table-column
+        label="ID"
+        prop="id"
+        sortable="custom"
+        align="center"
+        width="80"
+        :class-name="getSortClass('id')"
+      >
+        <template slot-scope="{ row }">
           <span>{{ row.id }}</span>
         </template>
       </el-table-column>
       <el-table-column label="用户名" min-width="120px">
-        <template slot-scope="{row}">
+        <template slot-scope="{ row }">
           <span>{{ row.user_name }}</span>
         </template>
       </el-table-column>
       <el-table-column label="邮箱" min-width="150px">
-        <template slot-scope="{row}">
+        <template slot-scope="{ row }">
           <span>{{ row.email }}</span>
         </template>
       </el-table-column>
       <el-table-column label="角色" min-width="200px" class="roleClass">
-        <template slot-scope="{row}">
+        <template slot-scope="{ row }">
           <span v-for="r in row.roles" :key="r.id" style="margin-right: 5px;">
-            <el-popover
-              placement="top-start"
-              width="100%"
-              trigger="hover"
-            >
+            <el-popover placement="top-start" width="100%" trigger="hover">
               <el-tag slot="reference" type="success" v-text="r.text" />
-              <template v-if="getPermissionName(r.permissions)!==null">
-                <el-tag v-for="(name, index) in getPermissionName(r.permissions)" :key="index" style="margin-right: 5px;">
+              <template v-if="getPermissionName(r.permissions) !== null">
+                <el-tag
+                  v-for="(name, index) in getPermissionName(r.permissions)"
+                  :key="index"
+                  style="margin-right: 5px;"
+                >
                   {{ name }}
                 </el-tag>
               </template>
               <span v-else>该角色下没有权限</span>
-
             </el-popover>
           </span>
         </template>
       </el-table-column>
       <el-table-column label="最后登录时间" min-width="160px">
-        <template slot-scope="{row}">
+        <template slot-scope="{ row }">
           <span>{{ row.last_login_at | formatDate }}</span>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" min-width="160px">
-        <template slot-scope="{row}">
+        <template slot-scope="{ row }">
           <span>{{ row.created_at | formatDate }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="380" class-name="small-padding fixed-width">
-        <template slot-scope="{row,$index}">
-          <el-button size="mini" type="primary" @click="handleUpdate(row,$index)">
+      <el-table-column
+        label="操作"
+        align="center"
+        width="500"
+        class-name="small-padding fixed-width"
+      >
+        <template slot-scope="{ row, $index }">
+          <el-button
+            size="mini"
+            type="primary"
+            @click="handleUpdate(row, $index)"
+          >
             更新
           </el-button>
-          <el-button size="mini" type="info" @click="handSyncRoles(row,$index)">
+          <el-button
+            size="mini"
+            type="primary"
+            @click="handleChangePwd(row, $index)"
+          >
+            修改密码
+          </el-button>
+          <el-button
+            size="mini"
+            type="info"
+            @click="handSyncRoles(row, $index)"
+          >
             修改角色
           </el-button>
-          <el-button size="mini" type="danger" @click="handleDelete(row,$index)">
+          <el-button
+            size="mini"
+            type="danger"
+            @click="handleDelete(row, $index)"
+          >
             删除
           </el-button>
-          <el-button size="mini" type="danger" @click="handleLogout(row,$index)">
+          <el-button
+            size="mini"
+            type="danger"
+            @click="handleLogout(row, $index)"
+          >
             强制登出
           </el-button>
         </template>
@@ -96,14 +141,25 @@
       @next-click="nextPage"
     />
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible">
-      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="left" label-width="90px" style="width: 80%; margin-left:50px;">
+      <el-form
+        ref="dataForm"
+        :rules="rules"
+        :model="temp"
+        label-position="left"
+        label-width="90px"
+        style="width: 80%; margin-left:50px;"
+      >
         <el-form-item label="用户名" prop="user_name">
           <el-input v-model="temp.user_name" />
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="temp.email" />
         </el-form-item>
-        <el-form-item v-if="dialogStatus==='create'" label="密码" prop="password">
+        <el-form-item
+          v-if="dialogStatus === 'create'"
+          label="密码"
+          prop="password"
+        >
           <el-input v-model="temp.password" type="password" />
         </el-form-item>
       </el-form>
@@ -111,13 +167,23 @@
         <el-button @click="dialogFormVisible = false">
           取消
         </el-button>
-        <el-button type="primary" @click="dialogStatus==='create'?createData():updateData()">
+        <el-button
+          type="primary"
+          @click="dialogStatus === 'create' ? createData() : updateData()"
+        >
           确定
         </el-button>
       </div>
     </el-dialog>
     <el-dialog title="修改用户角色" :visible.sync="dialogSyncFormVisible">
-      <el-form ref="dataSyncForm" :rules="rules" :model="temp" label-position="left" label-width="90px" style="width: 80%; margin-left:50px;">
+      <el-form
+        ref="dataSyncForm"
+        :rules="rules"
+        :model="temp"
+        label-position="left"
+        label-width="90px"
+        style="width: 80%; margin-left:50px;"
+      >
         <el-form-item label="角色名称" prop="roleName">
           <el-select
             v-model="temp.role"
@@ -141,6 +207,31 @@
           取消
         </el-button>
         <el-button type="primary" @click="sync()">
+          确定
+        </el-button>
+      </div>
+    </el-dialog>
+    <el-dialog title="修改用户密码" :visible.sync="dialogChangePwdVisible">
+      <el-form
+        ref="changePwdForm"
+        :rules="changePwdRules"
+        :model="temp"
+        label-position="left"
+        label-width="90px"
+        style="width: 80%; margin-left:50px;"
+      >
+        <el-form-item
+          label="密码"
+          prop="password"
+        >
+          <el-input v-model="temp.password" type="password" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogChangePwdVisible = false">
+          取消
+        </el-button>
+        <el-button type="primary" @click="changePwd()">
           确定
         </el-button>
       </div>
@@ -172,17 +263,26 @@
 </template>
 
 <script>
-import { index, update, store, destroy, syncRoles, forceLogout } from '@/api/user'
-import { allRoles } from '@/api/role'
-import waves from '@/directive/waves'
+import {
+  index,
+  update,
+  store,
+  destroy,
+  syncRoles,
+  forceLogout,
+  changePwd
+} from "@/api/user";
+import { allRoles } from "@/api/role";
+import waves from "@/directive/waves";
 
 export default {
-  name: 'Role',
+  name: "Role",
   directives: { waves },
   data() {
     return {
       tooltipId: null,
       list: null,
+      dialogChangePwdVisible: false,
       deleteDialogVisible: false,
       logoutDialogVisible: false,
       dialogSyncFormVisible: false,
@@ -192,8 +292,8 @@ export default {
       listQuery: {
         page: 1,
         pageSize: 15,
-        name: '',
-        sort: 'desc'
+        name: "",
+        sort: "desc"
       },
       temp: {
         id: null,
@@ -204,211 +304,246 @@ export default {
         password: null
       },
       dialogFormVisible: false,
-      dialogStatus: '',
+      dialogStatus: "",
       textMap: {
-        update: '编辑',
-        create: '创建'
+        update: "编辑",
+        create: "创建"
       },
       dialogPvVisible: false,
       pvData: [],
       rules: {
-        user_name: [{ required: true, message: '用户名必填', trigger: 'change' }],
-        email: [{ required: true, message: '邮箱必填', trigger: 'change' }],
-        password: [{ required: true, message: '密码必填', trigger: 'change' }, { min: 5, message: '最少5位', trigger: 'blur' }]
+        user_name: [
+          { required: true, message: "用户名必填", trigger: "change" }
+        ],
+        email: [{ required: true, message: "邮箱必填", trigger: "change" }],
+        password: [
+          { required: true, message: "密码必填", trigger: "change" },
+          { min: 5, message: "最少5位", trigger: "blur" }
+        ]
+      },
+      changePwdRules: {
+        password: [
+          { required: true, message: "密码必填", trigger: "change" },
+          { min: 5, message: "最少5位", trigger: "blur" }
+        ]
       }
-    }
+    };
   },
   created() {
-    this.getList()
+    this.getList();
   },
   methods: {
     forceLogout() {
       forceLogout(this.current.id).then(res => {
         this.$notify({
-          title: '登出成功',
-          type: 'success',
+          title: "登出成功",
+          type: "success",
           duration: 2000
-        })
-        this.logoutDialogVisible = false
-      })
+        });
+        this.logoutDialogVisible = false;
+      });
     },
     getPermissionName(data) {
       if (data && data.length > 0) {
-        const res = data.map(item => `${item.project}.${item.text}`)
-        return res || null
+        const res = data.map(item => `${item.project}.${item.text}`);
+        return res || null;
       }
 
-      return null
+      return null;
     },
     doDelete() {
       destroy(this.current.id).then(res => {
         this.$notify({
-          title: '删除成功',
-          type: 'success',
+          title: "删除成功",
+          type: "success",
           duration: 2000
-        })
-        this.list.splice(index, 1)
-      })
-      this.deleteDialogVisible = false
+        });
+        this.list.splice(index, 1);
+      });
+      this.deleteDialogVisible = false;
     },
     currentChange(p) {
-      this.listQuery.page = p
-      this.getList()
+      this.listQuery.page = p;
+      this.getList();
     },
     prevPage() {
-      this.listQuery.page--
-      this.getList()
+      this.listQuery.page--;
+      this.getList();
     },
     nextPage() {
-      this.listQuery.page++
-      this.getList()
+      this.listQuery.page++;
+      this.getList();
     },
     getList() {
-      this.listLoading = true
+      this.listLoading = true;
       index({
         page_size: this.listQuery.pageSize,
         page: this.listQuery.page,
         user_name: this.listQuery.name,
         sort: this.listQuery.sort
       }).then(response => {
-        const { data } = response
-        this.total = response.total
-        this.list = data
-        this.listQuery.page = response.page
-        this.listQuery.pageSize = response.page_size
+        const { data } = response;
+        this.total = response.total;
+        this.list = data;
+        this.listQuery.page = response.page;
+        this.listQuery.pageSize = response.page_size;
 
         setTimeout(() => {
-          this.listLoading = false
-        }, 400)
-      })
+          this.listLoading = false;
+        }, 400);
+      });
     },
     handleFilter() {
-      this.listQuery.page = 1
-      this.getList()
+      this.listQuery.page = 1;
+      this.getList();
     },
 
     sortChange(data) {
-      const { prop, order } = data
-      if (prop === 'id') {
-        this.sortByID(order)
+      const { prop, order } = data;
+      if (prop === "id") {
+        this.sortByID(order);
       }
     },
 
     sortByID(order) {
-      if (this.listQuery.sort === 'desc') {
-        this.listQuery.sort = 'asc'
+      if (this.listQuery.sort === "desc") {
+        this.listQuery.sort = "asc";
       } else {
-        this.listQuery.sort = 'desc'
+        this.listQuery.sort = "desc";
       }
-      this.handleFilter()
+      this.handleFilter();
     },
     resetTemp() {
       this.temp = {
         id: null,
         name: null,
         permissions: []
-      }
+      };
     },
     handleCreate() {
-      this.resetTemp()
-      this.dialogStatus = 'create'
-      this.dialogFormVisible = true
+      this.resetTemp();
+      this.dialogStatus = "create";
+      this.dialogFormVisible = true;
       this.$nextTick(() => {
-        this.$refs['dataForm'].clearValidate()
-      })
+        this.$refs["dataForm"].clearValidate();
+      });
     },
     createData() {
-      this.$refs['dataForm'].validate((valid) => {
+      this.$refs["dataForm"].validate(valid => {
         if (valid) {
           store({
             user_name: this.temp.user_name,
             email: this.temp.email,
             password: this.temp.password
           }).then(res => {
-            this.list.unshift(res.data)
-            this.dialogFormVisible = false
+            this.list.unshift(res.data);
+            this.dialogFormVisible = false;
             this.$notify({
-              title: '创建成功',
-              type: 'success',
+              title: "创建成功",
+              type: "success",
               duration: 2000
-            })
-          })
+            });
+          });
         }
-      })
+      });
     },
     handleUpdate(row) {
-      this.temp.id = row.id
-      this.temp.user_name = row.user_name
-      this.temp.email = row.email
-      this.dialogStatus = 'update'
-      this.dialogFormVisible = true
+      this.temp.id = row.id;
+      this.temp.user_name = row.user_name;
+      this.temp.email = row.email;
+      this.dialogStatus = "update";
+      this.dialogFormVisible = true;
       this.$nextTick(() => {
-        this.$refs['dataForm'].clearValidate()
-      })
+        this.$refs["dataForm"].clearValidate();
+      });
+    },
+    handleChangePwd(row) {
+      this.temp.id = row.id;
+      this.dialogChangePwdVisible = true;
+      this.$nextTick(() => {
+        this.$refs["changePwdForm"].clearValidate();
+      });
     },
     getAllRoles() {
-      return allRoles().then(({ data }) => { this.temp.roles = data })
+      return allRoles().then(({ data }) => {
+        this.temp.roles = data;
+      });
     },
     async handSyncRoles(row) {
-      await this.getAllRoles()
-      this.temp.id = row.id
-      this.temp.role = row.roles ? row.roles.map(item => item.id) : []
-      this.dialogSyncFormVisible = true
+      await this.getAllRoles();
+      this.temp.id = row.id;
+      this.temp.role = row.roles ? row.roles.map(item => item.id) : [];
+      this.dialogSyncFormVisible = true;
       this.$nextTick(() => {
-        this.$refs['dataSyncForm'].clearValidate()
-      })
+        this.$refs["dataSyncForm"].clearValidate();
+      });
     },
     updateData() {
-      this.$refs['dataForm'].validate((valid) => {
+      this.$refs["dataForm"].validate(valid => {
         if (valid) {
           update(this.temp.id, {
             user_name: this.temp.user_name,
             email: this.temp.email
           }).then(({ data }) => {
-            this.getList()
-            this.dialogFormVisible = false
+            this.getList();
+            this.dialogFormVisible = false;
             this.$notify({
-              title: '更新成功',
-              message: '用户信息更新成功',
-              type: 'success',
+              title: "更新成功",
+              message: "用户信息更新成功",
+              type: "success",
               duration: 2000
-            })
-          })
+            });
+          });
         }
-      })
+      });
     },
     sync() {
-      this.$refs['dataSyncForm'].validate((valid) => {
+      this.$refs["dataSyncForm"].validate(valid => {
         if (valid) {
           syncRoles(this.temp.id, { role_ids: this.temp.role }).then(res => {
-            this.getList()
-            this.dialogSyncFormVisible = false
+            this.getList();
+            this.dialogSyncFormVisible = false;
             this.$notify({
-              title: '同步成功',
-              type: 'success',
+              title: "同步成功",
+              type: "success",
               duration: 2000
-            })
-          })
+            });
+          });
         }
-      })
+      });
+    },
+    changePwd() {
+      this.$refs["changePwdForm"].validate(valid => {
+        if (valid) {
+          changePwd(this.temp.id, this.temp.password).then(res => {
+            this.getList();
+            this.dialogChangePwdVisible = false;
+            this.$notify({
+              title: "修改成功",
+              type: "success",
+              duration: 2000
+            });
+          });
+        }
+      });
     },
     handleDelete(row, index) {
-      this.deleteDialogVisible = true
-      this.current = row
+      this.deleteDialogVisible = true;
+      this.current = row;
     },
     handleLogout(row, index) {
-      this.logoutDialogVisible = true
-      this.current = row
+      this.logoutDialogVisible = true;
+      this.current = row;
     },
     getSortClass: function(key) {
-      return this.listQuery.sort === 'asc' ? 'ascending' : 'descending'
+      return this.listQuery.sort === "asc" ? "ascending" : "descending";
     }
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
-  .el-tag:hover {
-    cursor: pointer;
-  }
+.el-tag:hover {
+  cursor: pointer;
+}
 </style>
