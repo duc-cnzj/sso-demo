@@ -25,6 +25,6 @@ test:
     - export GOPROXY=https://goproxy.cn
     - cp .env.gitlab .env.testing
     - go mod tidy -v
-    - go run main.go migrate
+    - go run main.go migrate --env=.env.testing
   script:
     - go test ./... -cover
