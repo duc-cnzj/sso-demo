@@ -23,7 +23,7 @@ test:
   before_script:
     - export GO111MODULE=auto
     - export GOPROXY=https://goproxy.cn
-    - cp .env.gitlab .env
+    - cp .env.gitlab .env.testing
     - go mod tidy -v
     - go run main.go migrate
   script:
