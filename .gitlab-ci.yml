@@ -1,0 +1,30 @@
+services:
+  - mysql:5.7
+  - redis:latest
+
+variables:
+  MYSQL_DATABASE: sso-test
+  MYSQL_ROOT_PASSWORD: "123456"
+
+stages:
+  - wait-services
+  - test
+
+wait-services:
+  stage: wait-services
+  image: toschneck/wait-for-it
+  script:
+    - /wait-for-it.sh -h 127.0.0.1 -p 6379
+    - /wait-for-it.sh -h 127.0.0.1 -p 3306
+
+test:
+  stage: test
+  image: golang:1.14
+  before_script:
+    - export GO111MODULE=auto
+    - export GOPROXY=https://goproxy.cn
+    - cp .env.testing .env
+    - go mod tidy -v
+    - go run main.go migrate
+  script:
+    - go test ./... -cover
